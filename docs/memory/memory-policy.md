@@ -336,3 +336,12 @@ Phase 2以降で、以下の方式を比較して判断する。
 |---|---|---|---|
 | 0.1.0 | 2026-06-04 | draft | M1-1 Memory Policy定義の初版ドラフトを作成 |
 | 1.0.0 | 2026-06-04 | active | AI write制約、暫定配置、Context Pack境界、状態語統一を反映しActive化 |
+
+---
+
+[[M1-1_review]]
+[[M1-1_update]]
+[[phase-1-memory-foundation]]
+[[ADR-001-docs-as-source-of-memory]]
+[[ADR-002-memory-source-of-truth-boundary]]
+[[ADR-003-human-approved-memory-update]]
