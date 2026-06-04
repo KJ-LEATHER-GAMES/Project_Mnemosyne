@@ -1,11 +1,15 @@
- title: Project Mnemosyne Memory Policy  
-document_id: docs/memory/memory-policy.md  
+---
+
+title: "Project Mnemosyne Memory Policy"
+document_id: "docs/memory/memory-policy.md"
 status: draft  
 version: 0.1.0  
 created_at: 2026-06-04  
 updated_at: 2026-06-04  
 phase: "Phase 1: Memory Foundation"  
 milestone: "M1-1: Memory Policy定義"
+
+---
 
 # Project Mnemosyne Memory Policy
 
