@@ -1,0 +1,241 @@
+registry_schema_version: "0.1.0"
+registry_status: "draft"
+updated_at: "2026-06-08"
+
+description: >
+  Project Registry defines project-specific memory roots, required memory document
+  existence checks, optional source candidates, ADR sources, review sources,
+  source status handling, and write policy for Context Forge.
+
+defaults:
+  required_memory_docs:
+    - "project-summary.md"
+    - "current-status.md"
+    - "active-decisions.md"
+    - "next-actions.md"
+    - "ai-entrypoint.md"
+
+  source_status_policy: "active_preferred"
+
+  write_policy: "draft_only"
+
+  source_selection_policy:
+    required_memory_docs_meaning: "existence_check_only"
+    required_memory_docs_are_always_included: false
+    context_inclusion_is_decided_by:
+      - "Agent Registry required_context"
+      - "Agent Registry optional_context"
+      - "Task Request"
+      - "Additional Sources"
+      - "Source Status Policy"
+      - "Token Budget"
+      - "Build Rule"
+
+projects:
+  - project_code: "mnemosyne"
+    project_name: "Project Mnemosyne"
+    description: "AI外部記憶基盤を作るプロジェクト"
+    status: "active"
+    current_phase: "Phase 2: Context Forge"
+
+    memory_root: "docs/projects/mnemosyne/memory"
+
+    required_memory_docs:
+      - "project-summary.md"
+      - "current-status.md"
+      - "active-decisions.md"
+      - "next-actions.md"
+      - "ai-entrypoint.md"
+
+    optional_sources:
+      - source_group: "mnemosyne_phase_docs"
+        description: "Project MnemosyneのPhase計画・入力要件"
+        patterns:
+          - "docs/phases/phase-1-memory-foundation.md"
+          - "docs/phases/phase-2-context-forge.md"
+          - "docs/phases/phase-2-input-requirements.md"
+
+      - source_group: "mnemosyne_context_docs"
+        description: "Context Forge関連の設計文書"
+        patterns:
+          - "docs/context/*.md"
+          - "templates/context/*.md"
+
+      - source_group: "mnemosyne_memory_policy_docs"
+        description: "記憶分類・正本・参照優先順位に関する文書"
+        patterns:
+          - "docs/memory/*.md"
+
+      - source_group: "mnemosyne_requirements"
+        description: "Project Mnemosyne全体およびPhase別要件"
+        patterns:
+          - "docs/requirements/*.md"
+
+    adr_sources:
+      - source_group: "mnemosyne_adrs"
+        description: "Project Mnemosyne全体に関わるADR"
+        patterns:
+          - "docs/adr/*.md"
+
+    review_sources:
+      - source_group: "mnemosyne_reviews"
+        description: "Project Mnemosyne各Phase・Milestoneのレビュー結果"
+        patterns:
+          - "docs/review/*.md"
+
+    source_status_policy:
+      policy_id: "active_preferred"
+      include_by_default:
+        - "active"
+        - "accepted"
+      explicit_only:
+        - "draft"
+        - "proposed"
+        - "archived"
+        - "deprecated"
+        - "superseded"
+      warning_required:
+        - "draft"
+        - "proposed"
+        - "archived"
+        - "deprecated"
+        - "superseded"
+        - "unknown"
+      prohibit_as_final_evidence:
+        - "draft"
+        - "proposed"
+        - "archived"
+        - "deprecated"
+        - "superseded"
+        - "unknown"
+
+    write_policy:
+      policy_id: "draft_only"
+      ai_can:
+        - "create draft documents"
+        - "create review reports"
+        - "create update proposals"
+        - "create diff suggestions"
+        - "create warnings and issue candidates"
+      ai_must_not:
+        - "update active source documents directly"
+        - "treat draft or proposed sources as final decisions"
+        - "promote issues or ideas to decisions without human approval"
+        - "modify source-of-truth documents after Context Pack generation"
+      human_approval_required_for:
+        - "active document updates"
+        - "ADR acceptance"
+        - "task source-of-truth updates"
+        - "status changes"
+
+  - project_code: "ats"
+    project_name: "Adventure Token System"
+    description: "家庭内ポイント制度をLINE BotとDBで運用するプロジェクト"
+    status: "active"
+    current_phase: "Ver.1.1 planning / implementation"
+
+    memory_root: "docs/projects/ats/memory"
+
+    required_memory_docs:
+      - "project-summary.md"
+      - "current-status.md"
+      - "active-decisions.md"
+      - "next-actions.md"
+      - "ai-entrypoint.md"
+
+    optional_sources:
+      - source_group: "ats_domain_docs"
+        description: "ATSのドメインルール・契約文書"
+        patterns:
+          - "docs/domain-rules.md"
+          - "docs/usecase-contracts.md"
+          - "docs/repository-contracts.md"
+          - "docs/postback-contract.md"
+          - "docs/transaction-policy.md"
+
+      - source_group: "ats_database_docs"
+        description: "ATSのDB設計・マイグレーション関連文書"
+        patterns:
+          - "docs/database-design*.md"
+          - "docs/db*.md"
+          - "docs/migration*.md"
+
+      - source_group: "ats_test_docs"
+        description: "ATSのテスト計画・検証結果"
+        patterns:
+          - "docs/test-plan.md"
+          - "docs/test-results/*.md"
+          - "docs/review/*.md"
+
+      - source_group: "ats_version_docs"
+        description: "ATSのバージョン別計画文書"
+        patterns:
+          - "docs/ver-*.md"
+          - "docs/mvp-scope.md"
+
+      - source_group: "ats_source_code"
+        description: "ATS実装レビュー時に追加指定されるソースコード候補"
+        patterns:
+          - "src/usecases/**/*.ts"
+          - "src/services/**/*.ts"
+          - "src/repositories/**/*.ts"
+          - "src/types/**/*.ts"
+
+    adr_sources:
+      - source_group: "ats_adrs"
+        description: "ATSに関わる設計判断ADR"
+        patterns:
+          - "docs/adr/*.md"
+
+    review_sources:
+      - source_group: "ats_reviews"
+        description: "ATSの設計・実装・Phase検証レビュー"
+        patterns:
+          - "docs/review/*.md"
+
+    source_status_policy:
+      policy_id: "active_preferred"
+      include_by_default:
+        - "active"
+        - "accepted"
+      explicit_only:
+        - "draft"
+        - "proposed"
+        - "archived"
+        - "deprecated"
+        - "superseded"
+      warning_required:
+        - "draft"
+        - "proposed"
+        - "archived"
+        - "deprecated"
+        - "superseded"
+        - "unknown"
+      prohibit_as_final_evidence:
+        - "draft"
+        - "proposed"
+        - "archived"
+        - "deprecated"
+        - "superseded"
+        - "unknown"
+
+    write_policy:
+      policy_id: "draft_only"
+      ai_can:
+        - "create draft documents"
+        - "create review reports"
+        - "create update proposals"
+        - "create diff suggestions"
+        - "create warnings and issue candidates"
+      ai_must_not:
+        - "update active source documents directly"
+        - "treat draft or proposed sources as final decisions"
+        - "modify production data"
+        - "change application source code without explicit human instruction"
+        - "promote implementation findings to architectural decisions without human approval"
+      human_approval_required_for:
+        - "active document updates"
+        - "ADR acceptance"
+        - "task source-of-truth updates"
+        - "status changes"
+        - "source code changes"
