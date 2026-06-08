@@ -2,12 +2,14 @@
 title: "Context Pack Structure"
 document_id: "docs/context/context-pack-structure.md"
 document_role: "context_structure_definition"
-status: "draft"
-version: "0.1.0"
+status: "active"
+version: "1.0.0"
 created_at: "2026-06-08"
-updated_at: "2026-06-08"
+updated_at: "2026-06-09"
 phase: "Phase 2: Context Forge"
 milestone: "M2-1: Context Pack標準構造定義"
+owner: "Project Mnemosyne"
+review_status: "active"
 related_documents:
   - "docs/phases/phase-2-context-forge.md"
   - "docs/phases/phase-2-input-requirements.md"
@@ -19,19 +21,22 @@ related_documents:
   - "docs/adr/ADR-002-memory-source-of-truth-boundary.md"
   - "docs/adr/ADR-003-human-approved-memory-update.md"
   - "docs/adr/ADR-005-agent-context-separation.md"
+  - "docs/templates/context/context-pack.template.md"
 ---
 
 # Context Pack Structure
 
 ## 1. Status
 
-`draft`
+`active`
+
+本書は、M2-1：Context Pack標準構造定義のActive成果物である。
 
 ---
 
 ## 2. Purpose
 
-本書は、Phase 2: Context Forge において生成する **Context Pack** の標準構造を定義する文書である。
+本書は、Phase 2: Context Forge において生成する **Context Pack** の標準構造を定義する。
 
 Context Packは、Project Context、Agent Context、Task Context、Session Context、Recent Conversation Contextなどを選択・結合し、ChatGPT / Cursor / その他AIツールへ渡せるMarkdownとして整形した生成物である。
 
@@ -42,19 +47,62 @@ Context Packは、Project Context、Agent Context、Task Context、Session Conte
 - Source Listの扱い
 - Warningsの扱い
 - Build Metadataの扱い
+- Build Report Summaryの扱い
 - Context Packが正本ではなく生成物であること
+- Phase 2成果物候補との関係
+- M1で定義したstatusとの整合ルール
 
 ---
 
-## 3. Context Pack Definition
+## 3. Relationship to Phase 2 Deliverables
 
-### 3.1 One-Line Definition
+### 3.1 Position of This Document
+
+本書は、Phase 2成果物候補である `docs/context/context-pack-format.md` の前段として、Context Packの章構成・必須項目・Source List / Warnings / Build Metadata / Build Report Summaryを定義するM2-1成果物である。
+
+今後、`docs/context/context-pack-format.md` を作成する場合は、本書を基準として、より詳細なformat仕様、schema、validation ruleへ展開する。
+
+### 3.2 Template Location Policy
+
+Context Packテンプレートは、既存のMemory Template配置方針に合わせ、以下を正式配置とする。
+
+```text
+docs/templates/context/context-pack.template.md
+```
+
+`templates/context/context-pack.template.md` のようにrepository root直下へ置く構成は、過去の `docs/templates/memory/*.template.md` と配置方針が揃わないため、M2-1 Active版では採用しない。
+
+### 3.3 Relationship with Previous Candidate Structure
+
+Phase 2 Input Requirementsで示されたContext Pack Candidate Structureは、本書ではM1で確定したContext階層、Task正本、Agent Context分離方針に合わせて15章構成へ詳細化する。
+
+| Previous Candidate Section | M2-1 Active Standard Section |
+|---|---|
+| Build Metadata | 1. Build Metadata |
+| Agent Role and Output Contract | 3. Agent Context |
+| Project Context | 4. Project Context |
+| Active Decisions and Constraints | 6. Active Decisions / 12. Constraints and Write Policy |
+| Current Status | 5. Current Status |
+| Task Context | 7. Next Actions / 10. Task Context |
+| Additional Sources | 11. Additional Sources |
+| Recent Conversation Context | 8. Session Context / 9. Recent Conversation Context |
+| Warnings | 13. Warnings |
+| Source List | 14. Source List |
+| Build Report | 15. Build Report Summary |
+
+この詳細化は、旧構成の破棄ではなく、AIが読みやすく、かつSource境界とWarningを明示しやすくするための展開である。
+
+---
+
+## 4. Context Pack Definition
+
+### 4.1 One-Line Definition
 
 ```text
 Context Packとは、Project × Agent × Task に応じて、AIへ渡す文脈を一つのMarkdownに組成した生成物である。
 ```
 
-### 3.2 Context Pack Is Not Source of Truth
+### 4.2 Context Pack Is Not Source of Truth
 
 Context Packは正本ではない。
 
@@ -77,7 +125,7 @@ Context Pack内に誤り、欠落、古い情報、競合が見つかった場�
 
 ---
 
-## 4. Standard Structure
+## 5. Standard Structure
 
 Context Packの標準構造は以下とする。
 
@@ -112,556 +160,365 @@ Context Packの標準構造は以下とする。
 
 ## 14. Source List
 
-## 15. Build Report
+## 15. Build Report Summary
 ```
 
-### 4.1 Structure Policy
+### 5.1 Structure Policy
 
 Phase 2では、Project Context Pack、Agent Context Pack、Task Context Packなどを個別成果物として分離しない。
 
-それぞれはContext Packを構成する章または入力要素として扱い、最終的に一つのContext Packへ結合する。
+Context Packは、以下を統合した単一Markdownとして生成する。
 
----
+- Project Context
+- Agent Context
+- Task Context
+- Session Context
+- Recent Conversation Context
+- Additional Sources
+- Warnings
+- Source List
+- Build Report Summary
 
-## 5. Required and Optional Sections
+### 5.2 Section Order Policy
 
-| No. | Section | Required | Purpose |
-|---:|---|:---:|---|
-| 1 | Build Metadata | yes | 生成条件、対象project、対象agent、入力task、生成日時を記録する |
-| 2 | Base Context | yes | Project非依存の共通参照原則、情報優先順位、基本制約を示す |
-| 3 | Agent Context | yes | 選択Agentの役割、責務、禁止事項、出力契約を示す |
-| 4 | Project Context | yes | 対象プロジェクトの概要、目的、スコープを示す |
-| 5 | Current Status | yes | 現在地、進捗、保留事項、直近の状態を示す |
-| 6 | Active Decisions | yes | 現在有効な決定事項、ADR、設計判断を示す |
-| 7 | Next Actions | yes | Task正本から次に行う作業を示す |
-| 8 | Session Context | optional | 今回作業セッション内だけで有効な背景情報を示す |
-| 9 | Recent Conversation Context | optional | 直近会話から未反映の補足、候補情報、注意点を示す |
-| 10 | Task Context | yes | 今回AIに依頼する作業、成果物、完了条件を示す |
-| 11 | Additional Sources | optional | Task固有に追加された文書、コード、レビュー対象を要約する |
-| 12 | Constraints and Write Policy | yes | AIの操作境界、正本更新禁止、draft-only方針を示す |
-| 13 | Warnings | yes | draft混入、競合、不足、除外、token制約などを示す |
-| 14 | Source List | yes | 読み込んだsource、status、用途を一覧化する |
-| 15 | Build Report | yes | 生成結果、coverage、missing docs、excluded sourcesを記録する |
+`Warnings` は `Source List` より前に配置する。
+
+理由は以下である。
+
+- AIがsource詳細一覧を読む前に、欠落・競合・draft混入などの注意事項を認識できる。
+- draftやdeprecated sourceを確定情報として誤読するリスクを下げられる。
+- 人間レビュー時に、source一覧より先に問題箇所を確認できる。
 
 ---
 
 ## 6. Section Definitions
 
-## 6.1 Build Metadata
+### 6.1 Build Metadata
 
-### Purpose
+Context Pack生成条件を記録する。
 
-Context Packの生成条件を記録し、後から「何を入力として生成したか」を追跡できるようにする。
+必須項目は以下とする。
 
-### Required Items
-
-| Item | Required | Description |
-|---|:---:|---|
-| `context_pack_version` | yes | Context Pack構造のversion |
-| `generated_at` | yes | 生成日時 |
-| `project_code` | yes | 対象project |
-| `project_name` | recommended | 表示用project名 |
-| `agent_code` | yes | 対象agent |
-| `agent_name` | recommended | 表示用agent名 |
-| `task_request` | yes | 今回の依頼内容 |
-| `output_type` | recommended | 期待する出力種別 |
-| `build_mode` | yes | `active_preferred` などの生成mode |
-| `source_status_policy` | yes | source statusの扱い |
-| `token_budget` | optional | token上限目安 |
-| `builder_name` | optional | CLIまたはbuilder名 |
-| `builder_version` | optional | builder version |
-
-### Policy
-
-Build MetadataはContext Packの正当性を保証するものではない。
-
-ただし、Context Packをレビューする際に、対象project / agent / taskの取り違えを検出するための必須情報として扱う。
-
----
-
-## 6.2 Base Context
-
-### Purpose
-
-Project非依存で常にAIへ渡す共通原則を示す。
-
-### Included Information
-
-- Context Packは正本ではなく生成物である
-- Active文書を優先する
-- draft / proposedは未確定として扱う
-- superseded / deprecated / archivedは通常の根拠にしない
-- AIは正本を直接更新せず、draftまたは提案を作成する
-- 競合を見つけた場合は断定せず、WarningsまたはIssue候補として扱う
-
-### Source Candidates
-
-- `docs/memory/memory-policy.md`
-- `docs/memory/memory-taxonomy.md`
-- `docs/memory/context-source-priority.md`
-- `docs/adr/ADR-001-docs-as-source-of-memory.md`
-- `docs/adr/ADR-002-memory-source-of-truth-boundary.md`
-- `docs/adr/ADR-003-human-approved-memory-update.md`
-
----
-
-## 6.3 Agent Context
-
-### Purpose
-
-選択された専門Agentが、どの役割で、何を読み、何を出力し、何をしてはいけないかを示す。
-
-### Included Information
-
-- `agent_code`
-- agent purpose
-- role / responsibility
-- required context categories
-- optional context categories
-- output contract
-- prohibited actions
-- write policy
-- expected review perspective
-
-### Policy
-
-Agent ContextはProject固有の決定事項を持たない。
-
-Project固有のFact / Decision / Task / Issueは、Project Context、Active Decisions、Next Actions、Current Statusから取得する。
-
----
-
-## 6.4 Project Context
-
-### Purpose
-
-対象プロジェクトの基本情報をAIへ渡す。
-
-### Included Information
-
-- project name
-- project purpose
-- project scope
-- in scope / out of scope
-- main deliverables
-- related phases or milestones
-- project-specific terminology
-
-### Source Candidates
-
-- `docs/projects/{project_code}/memory/project-summary.md`
-- phase文書
-- requirement文書
-
----
-
-## 6.5 Current Status
-
-### Purpose
-
-対象プロジェクトの現在地をAIへ渡す。
-
-### Included Information
-
-- current phase / milestone
-- current status
-- completed items
-- in-progress items
-- open issues
-- pending review points
-- recent validation results summary
-
-### Source Candidates
-
-- `docs/projects/{project_code}/memory/current-status.md`
-- review documents
-- phase completion review documents
-
-### Policy
-
-Current StatusはTask正本ではない。
-
-Task正本は `next-actions.md` とし、Current Statusでは状態サマリーとして扱う。
-
----
-
-## 6.6 Active Decisions
-
-### Purpose
-
-現在有効な判断、設計方針、ADRをAIへ渡す。
-
-### Included Information
-
-- active decisions
-- accepted ADR summaries
-- decision rationale
-- superseded decision references when needed
-- unresolved decision candidates when explicitly included
-
-### Source Candidates
-
-- `docs/projects/{project_code}/memory/active-decisions.md`
-- `docs/adr/*.md`
-- `docs/memory/context-source-priority.md`
-
-### Policy
-
-Active Decisionsは、draftまたはrecent contextに含まれる未承認判断より優先する。
-
----
-
-## 6.7 Next Actions
-
-### Purpose
-
-現在のTask正本をAIへ渡す。
-
-### Included Information
-
-- active tasks
-- next milestone tasks
-- task priority
-- task status
-- acceptance criteria
-- blockers
-- target deliverables
-
-### Source Candidates
-
-- `docs/projects/{project_code}/memory/next-actions.md`
-- phase task list
-
-### Policy
-
-Next ActionsはTask正本である。
-
-Current Status、AI Entrypoint、Conversation Summary内のTask記載と競合する場合は、Next Actionsを優先し、差分をWarningまたはIssue候補として扱う。
-
----
-
-## 6.8 Session Context
-
-### Purpose
-
-現在の作業セッションに固有の情報をAIへ渡す。
-
-### Included Information
-
-- 今回セッションで合意した作業範囲
-- 一時的な前提
-- 作業途中の検討メモ
-- 今回だけ有効な制約
-- ユーザーが明示した補足
-
-### Policy
-
-Session Contextは正本ではない。
-
-Session ContextがActive正本と競合する場合は、Active正本を優先する。
-
-ただし、ユーザーが今回作業の修正指示として明示した場合は、Task Contextの一部として扱う。
-
----
-
-## 6.9 Recent Conversation Context
-
-### Purpose
-
-直近会話のうち、まだActive正本へ反映されていない可能性がある情報をAIへ渡す。
-
-### Included Information
-
-- 直近会話で確定したが未反映の可能性がある内容
-- 直近会話で保留になった論点
-- ユーザーが追加した修正指示
-- Conversation Summaryに整理された候補情報
-
-### Policy
-
-Recent Conversation ContextはActive正本より優先しない。
-
-Active正本と一致する場合は補足として扱う。
-
-Active正本と競合する場合は、Conflict Warningとして扱う。
-
-Recent Conversation Contextにしか存在しない判断は、Decision候補として扱い、確定判断としては扱わない。
-
----
-
-## 6.10 Task Context
-
-### Purpose
-
-今回AIに実施させる具体作業を明示する。
-
-### Required Items
-
-| Item | Required | Description |
-|---|:---:|---|
-| `task_request` | yes | ユーザーの依頼内容 |
-| `task_type` | recommended | draft / review / implementation_plan / validation 等 |
-| `target_files` | recommended | 対象成果物またはコード |
-| `deliverables` | yes | 作成・更新する成果物 |
-| `acceptance_criteria` | recommended | 完了条件 |
-| `user_constraints` | optional | ユーザー指定制約 |
-| `out_of_scope` | optional | 今回扱わないもの |
-
-### Policy
-
-Task Contextは、Context Pack生成時点の依頼を表す。
-
-Task Contextは正本ではないが、今回作業に対する直接指示として扱う。
-
----
-
-## 6.11 Additional Sources
-
-### Purpose
-
-標準記憶文書だけでは不足する、Task固有の追加情報をAIへ渡す。
-
-### Included Information
-
-- 明示指定された文書
-- 明示指定されたコード
-- review文書
-- test result文書
-- phase固有文書
-- requirement文書
-
-### Policy
-
-Additional Sourcesは標準記憶文書を置き換えない。
-
-Additional Sourcesにdraft文書を含める場合は、Warningsへ明示する。
-
----
-
-## 6.12 Constraints and Write Policy
-
-### Purpose
-
-AIの操作境界、出力範囲、正本更新ルールを明示する。
-
-### Included Information
-
-- AIは正本を直接更新しない
-- AIはdraft、提案、レビュー、差分案を作成できる
-- Active化は人間承認後に行う
-- Context Packは生成物であり、正本更新結果ではない
-- draft sourceを確定判断の根拠にしない
-- conflictを見つけた場合はIssue候補として扱う
-
-### Source Candidates
-
-- `docs/memory/memory-policy.md`
-- `docs/adr/ADR-003-human-approved-memory-update.md`
-- `docs/projects/{project_code}/memory/active-decisions.md`
-
----
-
-## 6.13 Warnings
-
-### Purpose
-
-Context Pack利用時にAIと人間が注意すべき事項を明示する。
-
-### Warning Types
-
-| Warning Type | Meaning | Required Handling |
-|---|---|---|
-| `missing_required_doc` | 必須文書が存在しない | Build Reportへ記録し、Contextの欠落として扱う |
-| `draft_source_included` | draft文書が含まれる | 未確定情報として明示する |
-| `deprecated_source_included` | deprecated文書が含まれる | 通常根拠にしない |
-| `superseded_source_included` | superseded文書が含まれる | 履歴目的として扱う |
-| `archived_source_included` | archived文書が含まれる | 履歴目的として扱う |
-| `conflict_detected` | source間で競合がある | Active優先。Issue候補として扱う |
-| `recent_context_conflict` | recent contextがActive正本と競合 | Active優先。更新候補として扱う |
-| `token_budget_exceeded` | token上限を超過 | 除外・要約・分割が必要 |
-| `source_excluded` | sourceが除外された | 除外理由を記録する |
-| `unknown_status` | source statusが不明 | 確定根拠にしない |
-
-### Policy
-
-WarningsはContext Pack内に必ず章として出力する。
-
-Warningがない場合も、`No warnings.` と明記する。
-
----
-
-## 6.14 Source List
-
-### Purpose
-
-Context Pack生成時に読み込んだsourceを追跡可能にする。
-
-### Required Items
-
-| Item | Required | Description |
-|---|:---:|---|
-| `source_id` | yes | Context Pack内で参照するsource ID |
-| `path` | yes | source path |
-| `document_id` | recommended | sourceのdocument_id |
-| `title` | recommended | source title |
-| `status` | yes | active / draft / archived 等 |
-| `source_type` | yes | adr / memory_doc / phase_doc / requirement / code / review 等 |
-| `included_section` | recommended | Context Pack内の反映先章 |
-| `purpose` | recommended | 読み込んだ理由 |
-| `handling` | recommended | normal / warning / reference_only / excluded |
-
-### Policy
-
-Source ListはContext Packの末尾に必ず出力する。
-
-Source Listは、AIが参照した根拠を人間が確認するための一覧であり、sourceの内容そのものを正本化するものではない。
-
----
-
-## 6.15 Build Report
-
-### Purpose
-
-Context Pack生成処理の結果を要約する。
-
-### Included Information
-
-- source coverage
-- included sources count
-- excluded sources count
-- missing required docs
-- warnings count
-- token estimate
-- generation result
-- next recommended action
-
-### Policy
-
-Build ReportはContext Packに内包してもよいが、CLI実装では別ファイルとして `build-report.md` を出力してもよい。
-
-Context Pack内に内包する場合は、AIへ渡してよい範囲に要約する。
-
----
-
-## 7. Source Status Handling
-
-| Source Status | Include by Default | Handling |
-|---|:---:|---|
-| `active` | yes | 通常の根拠として扱う |
-| `accepted` | yes | ADR等で通常の根拠として扱う |
-| `draft` | no | 明示指定時のみwarning付きで含める |
-| `proposed` | no | 候補として扱う |
-| `superseded` | no | 履歴比較時のみ含める |
-| `deprecated` | no | 原則除外。含める場合はwarning必須 |
-| `archived` | no | 履歴目的でのみ含める |
-| `unknown` | no | 確定根拠にしない |
-
----
-
-## 8. Context Ordering Policy
-
-AIへ渡すContext Packでは、以下の順序で情報を提示する。
-
-1. 生成条件を確認するためのBuild Metadata
-2. 読み方を制御するBase Context
-3. AIの役割を制御するAgent Context
-4. Project固有の文脈
-5. 現在地・決定・次アクション
-6. セッション固有または直近会話の補足
-7. 今回タスクの具体指示
-8. 制約と書き込み方針
-9. Warnings
-10. Source List / Build Report
-
-この順序により、AIがTaskだけを見て正本・制約・決定事項を無視するリスクを下げる。
-
----
-
-## 9. Minimum Valid Context Pack
-
-最小有効Context Packは、以下をすべて満たす必要がある。
-
-| Requirement | Description |
+| Item | Description |
 |---|---|
-| MVP-001 | Build Metadataが存在する |
-| MVP-002 | Base Contextが存在する |
-| MVP-003 | Agent Contextが存在する |
-| MVP-004 | Project Contextが存在する |
-| MVP-005 | Current Statusが存在する |
-| MVP-006 | Active Decisionsが存在する |
-| MVP-007 | Next Actionsが存在する |
-| MVP-008 | Task Contextが存在する |
-| MVP-009 | Constraints and Write Policyが存在する |
-| MVP-010 | Warningsが存在する。warningなしの場合も明記されている |
-| MVP-011 | Source Listが存在する |
-| MVP-012 | Context Packが正本ではないことが明記されている |
+| `context_pack_version` | Context Pack構造version |
+| `generated_at` | 生成日時 |
+| `project_code` | 対象project code |
+| `project_name` | 対象project name |
+| `agent_code` | 対象agent code。未指定時は `default` |
+| `agent_name` | 対象agent name |
+| `task_request` | Context Pack生成時のtask request概要 |
+| `output_type` | review / draft / implementation_plan / investigation等 |
+| `build_mode` | standard / minimal / full / debug等 |
+| `source_status_policy` | draft等の扱い |
+| `token_budget` | Context Pack生成時のtoken budget |
+| `builder_name` | builder tool name |
+| `builder_version` | builder tool version |
 
----
+### 6.2 Base Context
 
-## 10. Relationship with Build Report
+Projectに依存しない共通原則を記載する。
 
-Context PackとBuild Reportは役割が異なる。
+含める情報は以下とする。
 
-| Item | Purpose | Human Use | AI Use |
-|---|---|---|---|
-| Context Pack | AIへ渡す文脈本体 | 内容確認 | 作業文脈として読む |
-| Build Report | 生成処理の検査結果 | 欠落・除外・警告確認 | 必要に応じて警告を参照 |
+- Context Packは正本ではないこと
+- Active sourceが優先されること
+- AIはActive正本を直接更新しないこと
+- draft / proposed / recent contextの扱い
+- Source Priority
+- 共通制約
 
-Phase 2初期実装では、Context Pack内にBuild Report要約を含める。
+### 6.3 Agent Context
 
-CLI実装が進んだ段階で、以下の2ファイル出力を許容する。
+Agentごとの役割・責務・出力契約を記載する。
+
+含める情報は以下とする。
+
+- Agent role
+- Responsibilities
+- Out of scope
+- Required context
+- Allowed operations
+- Forbidden operations
+- Output contract
+
+### 6.4 Project Context
+
+対象projectの概要を記載する。
+
+含める情報は以下とする。
+
+- Project purpose
+- Project scope
+- Out of scope
+- Current phase
+- Main deliverables
+- Related systems / repositories
+- Project memory documents
+
+### 6.5 Current Status
+
+対象projectの現在地を記載する。
+
+含める情報は以下とする。
+
+- Current phase / milestone
+- Completed items
+- In-progress items
+- Known issues
+- Recent changes
+- Current working context
+
+Current Statusは状態サマリーであり、Task正本ではない。
+
+### 6.6 Active Decisions
+
+Activeな判断事項を記載する。
+
+含める情報は以下とする。
+
+- Accepted ADR
+- Active decisions
+- Architecture decisions
+- Operational decisions
+- Source of truth boundaries
+- Context handling rules
+
+### 6.7 Next Actions
+
+次に行うべき作業を記載する。
+
+含める情報は以下とする。
+
+- Active tasks
+- Next milestone tasks
+- Priority
+- Done criteria
+- Dependencies
+
+Task正本は、原則として `next-actions.md` で管理する。
+
+### 6.8 Session Context
+
+今回のContext Build Requestまたは一時入力に含まれる情報を記載する。
+
+Session Contextは今回生成するContext Packに閉じる一時情報であり、正本ではない。
+
+含める情報は以下とする。
+
+- 今回の作業依頼
+- 今回だけ有効な補足条件
+- 一時的な作業方針
+- CLI引数または手動入力されたcontext
+- その場で指定されたreview観点
+
+Session ContextがActive sourceと競合する場合、Active sourceを優先し、競合はWarningsへ記録する。
+
+### 6.9 Recent Conversation Context
+
+Conversation Summary等から取得する、直近会話由来の未反映情報を記載する。
+
+Recent Conversation Contextは正本ではない。ただし、正本化前の候補情報として、AI作業時の文脈補助に利用できる。
+
+含める情報は以下とする。
+
+- 直近会話で合意されたが未反映の候補
+- 直近会話で確認されたIssue候補
+- 直近会話で提示された修正方針
+- Conversation Summaryから抽出された重要事項
+
+Recent Conversation Contextは、正本反映、reviewed、archived等の状態遷移まで参照候補として残り得る。
+
+Recent Conversation ContextがActive sourceと競合する場合、Active sourceを優先し、競合はWarningsへ記録する。
+
+### 6.10 Task Context
+
+今回のAI作業に必要なtask-specific contextを記載する。
+
+含める情報は以下とする。
+
+- Task objective
+- Required outputs
+- Done criteria
+- Review viewpoints
+- Input files
+- Expected change scope
+- Non-goals
+
+### 6.11 Additional Sources
+
+Taskで明示指定された追加資料を記載する。
+
+含める情報は以下とする。
+
+- Source summary
+- Relevant excerpts
+- Why included
+- Handling note
+- Status note
+
+Additional Sourcesは正本より優先しない。
+
+### 6.12 Constraints and Write Policy
+
+AIの操作境界を記載する。
+
+含める情報は以下とする。
+
+- AIが作成できる成果物
+- AIが直接更新してはいけないもの
+- Human approvalが必要な操作
+- Draft / Active化の境界
+- Source of truth boundary
+- Write policy
+
+### 6.13 Warnings
+
+Context Pack生成時の警告を記載する。
+
+Warningsは必須章とする。
+
+警告がない場合も、以下のように明記する。
+
+```text
+No warnings.
+```
+
+Warning種別は以下とする。
+
+| Warning Type | Description |
+|---|---|
+| `missing_required_doc` | 必須sourceが存在しない |
+| `draft_source_included` | draft sourceを含めた |
+| `proposed_source_included` | proposed sourceを含めた |
+| `deprecated_source_included` | deprecated sourceを含めた |
+| `superseded_source_included` | superseded sourceを含めた |
+| `archived_source_included` | archived sourceを含めた |
+| `conflict_detected` | source間の競合を検知した |
+| `recent_context_conflict` | recent contextとActive sourceの競合を検知した |
+| `token_budget_exceeded` | token budgetによりsourceを省略した |
+| `source_excluded` | sourceを除外した |
+| `unknown_status` | source statusを判定できなかった |
+
+### 6.14 Source List
+
+Context Pack生成に使ったsource一覧を記載する。
+
+Source Listは必須章とする。
+
+Source Listの必須項目は以下とする。
+
+| Field | Description |
+|---|---|
+| `source_id` | Context Pack内で参照するsource ID |
+| `path` | source path |
+| `document_id` | source document_id |
+| `title` | source title |
+| `status` | active / draft / archived等 |
+| `source_type` | adr / memory_doc / phase_doc / requirement / code / review等 |
+| `included_section` | 反映先章 |
+| `purpose` | 読み込んだ理由 |
+| `handling` | normal / warning / reference_only / excluded |
+
+### 6.15 Build Report Summary
+
+Context Pack内には、Build Reportの要約を必ず含める。
+
+Build Report Summaryには、AIが作業時に誤読を避けるために必要な最小情報のみを含める。
+
+含める情報は以下とする。
+
+- Included source count
+- Excluded source count
+- Warning count
+- Conflict count
+- Missing required source count
+- Token budget handling
+- Detailed Build Report path
+
+詳細なBuild Reportは、CLI実装時に別ファイルとして出力してよい。
+
+標準出力候補は以下とする。
 
 ```text
 dist/context/{project_code}/{agent_code}/context-pack.md
 dist/context/{project_code}/{agent_code}/build-report.md
 ```
 
----
-
-## 11. Out of Scope
-
-本書では以下を扱わない。
-
-| Out of Scope | Reason |
-|---|---|
-| Context読み込み優先順位の詳細アルゴリズム | `context-build-rule.md` で扱う |
-| Project Registryのschema詳細 | M2-2以降で扱う |
-| Agent Registryのschema詳細 | M2-3以降で扱う |
-| CLI引数仕様 | M2-4以降で扱う |
-| token圧縮アルゴリズム | Phase 2後半またはPhase 3以降で扱う |
-| RAG / Vector Search | Phase 3で扱う |
-| Memory API | Phase 4で扱う |
-| MCP連携 | Phase 5で扱う |
-| AI回答の自動正本反映 | Phase 2対象外。人間承認境界を維持する |
+Context Pack内のBuild Report Summaryと、別ファイルのBuild Reportが競合する場合は、元sourceおよびBuild Report詳細を確認し、Context Packを正本として扱わない。
 
 ---
 
-## 12. Acceptance Criteria
+## 7. Source Status Handling
 
-M2-1は、以下を満たした場合に完了とする。
+Context Builderはsource statusに応じて、以下の扱いを行う。
 
-| ID | Criteria |
-|---|---|
-| M2-1-AC-001 | Context Packの標準章構成が定義されている |
-| M2-1-AC-002 | 各章の目的と含める情報が定義されている |
-| M2-1-AC-003 | 必須章と任意章が区別されている |
-| M2-1-AC-004 | Build Metadataの項目が定義されている |
-| M2-1-AC-005 | Source Listの項目と扱いが定義されている |
-| M2-1-AC-006 | Warningsの種類と扱いが定義されている |
-| M2-1-AC-007 | Context Packが正本ではなく生成物であることが明記されている |
-| M2-1-AC-008 | `templates/context/context-pack.template.md` と対応している |
+| Status | Handling | Context Pack Inclusion |
+|---|---|---|
+| `active` | 現在有効な正本文書・運用文書・記憶文書 | include normally |
+| `accepted` | 採用済みADRまたはDecision系source | include normally |
+| `draft` | 未承認 | include only when explicitly requested, with warning |
+| `proposed` | 提案中 | include only when explicitly requested, with warning |
+| `superseded` | 置換済み | exclude by default; include only for history with warning |
+| `deprecated` | 非推奨 | exclude by default; include only for history with warning |
+| `archived` | 保管済み | exclude by default; include only for history with warning |
+| `unknown` | status判定不能 | include only with warning or exclude by policy |
+
+`unknown` はM1で定義した正式statusではない。
+
+`unknown` は、Context Builderがsourceのstatusを判定できなかった場合のbuild-time handling valueとして扱う。
+
+`unknown` sourceは確定根拠に使用せず、WarningsおよびBuild Report Summaryに記録する。
 
 ---
 
-## 13. Draft Review Points
+## 8. Required Context Pack Rules
 
-Active化前に以下を確認する。
+Context Packは以下のルールを満たす必要がある。
 
-| ID | Review Point |
+1. Context Packは正本ではないことを明記する。
+2. Build Metadataを必ず含める。
+3. Warningsを必ず含める。
+4. Source Listを必ず含める。
+5. Build Report Summaryを必ず含める。
+6. draft / proposed / archived / deprecated / superseded sourceを含める場合はWarningsへ記録する。
+7. Active sourceとRecent Conversation Contextが競合する場合はActive sourceを優先する。
+8. Session Contextは今回作業セッション内の一時情報として扱う。
+9. Context Pack内の情報は、元sourceへtraceできるようにする。
+10. Context PackをActive正本として扱ってはならない。
+
+---
+
+## 9. Active Definition of Done
+
+M2-1は以下を満たすことでActive完了とする。
+
+- [x] Context Packの章構成が定義されている。
+- [x] 各章に含める情報が定義されている。
+- [x] Source Listの扱いが定義されている。
+- [x] Warningsの扱いが定義されている。
+- [x] Build Metadataの扱いが定義されている。
+- [x] Build Report Summaryの扱いが定義されている。
+- [x] Context Packが正本ではなく生成物であることが明記されている。
+- [x] Phase 2成果物候補とM2-1成果物名の関係が明記されている。
+- [x] Session ContextとRecent Conversation Contextの境界が定義されている。
+- [x] M1 status定義との整合ルールが定義されている。
+- [x] Templateの正式配置が `docs/templates/context/context-pack.template.md` と定義されている。
+
+---
+
+## 10. Revision Notes
+
+### 10.1 M2-1 Active Revision
+
+P0/P1レビュー結果に基づき、以下を反映した。
+
+| ID | Result |
 |---|---|
-| RP-001 | `phase-2-context-forge.md` のM2-1記載と成果物名が一致しているか |
-| RP-002 | `phase-requirements-2.md` の標準構成との差異が意図的か |
-| RP-003 | `Warnings` を `Referenced Sources` より前に置く構成で問題ないか |
-| RP-004 | `Build Report` をContext Pack内に含めるか、別成果物に分離するか |
-| RP-005 | `Session Context` と `Recent Conversation Context` の境界が実装可能な粒度か |
-| RP-006 | Source Status HandlingがM1のtaxonomy/status定義と整合しているか |
+| M2-1-REV-P0-001 | Phase 2成果物候補とM2-1成果物名の関係を明記 |
+| M2-1-REV-P0-002 | Build ReportはContext Pack内にSummaryを必須化し、詳細版は別ファイル出力可能と定義 |
+| M2-1-REV-P1-001 | 既存候補構成から15章構成への展開対応表を追加 |
+| M2-1-REV-P1-002 | Session Context / Recent Conversation Context の入力元・有効期間・保持境界を追記 |
+| M2-1-REV-P1-003 | `active` と `accepted` の使い分けを補足 |
+| M2-1-REV-P1-004 | `unknown` は正式statusではなくbuild-time handling valueと明記 |
+
