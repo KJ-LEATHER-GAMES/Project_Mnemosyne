@@ -1,5 +1,5 @@
 registry_schema_version: "0.1.0"
-registry_status: "draft"
+registry_status: "active"
 updated_at: "2026-06-08"
 
 description: >
@@ -15,10 +15,6 @@ defaults:
     - "next-actions.md"
     - "ai-entrypoint.md"
 
-  source_status_policy: "active_preferred"
-
-  write_policy: "draft_only"
-
   source_selection_policy:
     required_memory_docs_meaning: "existence_check_only"
     required_memory_docs_are_always_included: false
@@ -30,6 +26,54 @@ defaults:
       - "Source Status Policy"
       - "Token Budget"
       - "Build Rule"
+
+  source_status_policies:
+    active_preferred:
+      policy_id: "active_preferred"
+      include_by_default:
+        - "active"
+        - "accepted"
+      explicit_only:
+        - "draft"
+        - "proposed"
+        - "archived"
+        - "deprecated"
+        - "superseded"
+        - "unknown"
+      warning_required:
+        - "draft"
+        - "proposed"
+        - "archived"
+        - "deprecated"
+        - "superseded"
+        - "unknown"
+      prohibit_as_final_evidence:
+        - "draft"
+        - "proposed"
+        - "archived"
+        - "deprecated"
+        - "superseded"
+        - "unknown"
+
+  write_policies:
+    draft_only:
+      policy_id: "draft_only"
+      ai_can:
+        - "create draft documents"
+        - "create review reports"
+        - "create update proposals"
+        - "create diff suggestions"
+        - "create warnings and issue candidates"
+      ai_must_not:
+        - "update active source documents directly"
+        - "treat draft or proposed sources as final decisions"
+        - "promote issues or ideas to decisions without human approval"
+        - "modify source-of-truth documents after Context Pack generation"
+      human_approval_required_for:
+        - "active document updates"
+        - "ADR acceptance"
+        - "task source-of-truth updates"
+        - "status changes"
 
 projects:
   - project_code: "mnemosyne"
@@ -85,48 +129,9 @@ projects:
 
     source_status_policy:
       policy_id: "active_preferred"
-      include_by_default:
-        - "active"
-        - "accepted"
-      explicit_only:
-        - "draft"
-        - "proposed"
-        - "archived"
-        - "deprecated"
-        - "superseded"
-      warning_required:
-        - "draft"
-        - "proposed"
-        - "archived"
-        - "deprecated"
-        - "superseded"
-        - "unknown"
-      prohibit_as_final_evidence:
-        - "draft"
-        - "proposed"
-        - "archived"
-        - "deprecated"
-        - "superseded"
-        - "unknown"
 
     write_policy:
       policy_id: "draft_only"
-      ai_can:
-        - "create draft documents"
-        - "create review reports"
-        - "create update proposals"
-        - "create diff suggestions"
-        - "create warnings and issue candidates"
-      ai_must_not:
-        - "update active source documents directly"
-        - "treat draft or proposed sources as final decisions"
-        - "promote issues or ideas to decisions without human approval"
-        - "modify source-of-truth documents after Context Pack generation"
-      human_approval_required_for:
-        - "active document updates"
-        - "ADR acceptance"
-        - "task source-of-truth updates"
-        - "status changes"
 
   - project_code: "ats"
     project_name: "Adventure Token System"
@@ -195,47 +200,6 @@ projects:
 
     source_status_policy:
       policy_id: "active_preferred"
-      include_by_default:
-        - "active"
-        - "accepted"
-      explicit_only:
-        - "draft"
-        - "proposed"
-        - "archived"
-        - "deprecated"
-        - "superseded"
-      warning_required:
-        - "draft"
-        - "proposed"
-        - "archived"
-        - "deprecated"
-        - "superseded"
-        - "unknown"
-      prohibit_as_final_evidence:
-        - "draft"
-        - "proposed"
-        - "archived"
-        - "deprecated"
-        - "superseded"
-        - "unknown"
 
     write_policy:
       policy_id: "draft_only"
-      ai_can:
-        - "create draft documents"
-        - "create review reports"
-        - "create update proposals"
-        - "create diff suggestions"
-        - "create warnings and issue candidates"
-      ai_must_not:
-        - "update active source documents directly"
-        - "treat draft or proposed sources as final decisions"
-        - "modify production data"
-        - "change application source code without explicit human instruction"
-        - "promote implementation findings to architectural decisions without human approval"
-      human_approval_required_for:
-        - "active document updates"
-        - "ADR acceptance"
-        - "task source-of-truth updates"
-        - "status changes"
-        - "source code changes"

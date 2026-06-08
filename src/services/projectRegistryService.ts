@@ -15,11 +15,22 @@ import type {
   ResolvedProjectRegistry,
   SourceCandidate,
   SourceGroup,
+  SourceStatusPolicyConfig,
   SourceStatusPolicyId,
+  StandardRequiredMemoryDoc,
+  WritePolicyConfig,
   WritePolicyId,
 } from "../types/registry";
 
 const DEFAULT_PROJECTS_YAML_PATH = "config/projects.yaml";
+
+const STANDARD_REQUIRED_MEMORY_DOCS: StandardRequiredMemoryDoc[] = [
+  "project-summary.md",
+  "current-status.md",
+  "active-decisions.md",
+  "next-actions.md",
+  "ai-entrypoint.md",
+];
 
 const VALID_SOURCE_STATUS_POLICIES: SourceStatusPolicyId[] = [
   "active_only",
@@ -58,10 +69,14 @@ export async function resolveProjectRegistry(input: {
     throw new Error(`Project not found in Project Registry: ${input.projectCode}`);
   }
 
+  const sourceStatusPolicy = resolveSourceStatusPolicy(registry, project);
+  const writePolicy = resolveWritePolicy(registry, project);
   const requiredDocsCheck = checkRequiredMemoryDocs(project);
 
   return {
     project,
+    source_status_policy: sourceStatusPolicy,
+    write_policy: writePolicy,
     required_docs_check: requiredDocsCheck,
   };
 }
@@ -94,8 +109,11 @@ export async function validateProjectRegistry(
 
   for (const project of registry.projects) {
     errors.push(...validateProjectRequiredFields(project));
-    errors.push(...validateProjectPolicies(project));
+    errors.push(...validateRequiredMemoryDocsDefinition(project));
+    errors.push(...validateProjectPolicies(registry, project));
+
     warnings.push(...validateProjectSourceGroups(project));
+    warnings.push(...validateSourceGroupPatterns(project));
 
     const requiredDocsCheck = checkRequiredMemoryDocs(project);
 
@@ -138,16 +156,20 @@ export async function validateProjectRequiredMemoryDocs(input: {
     };
   }
 
+  const errors: ProjectRegistryValidationError[] = [
+    ...validateRequiredMemoryDocsDefinition(project),
+  ];
+
   const requiredDocsCheck = checkRequiredMemoryDocs(project);
 
-  const errors: ProjectRegistryValidationError[] = requiredDocsCheck.missing_docs.map(
-    (doc) => ({
+  for (const missingDoc of requiredDocsCheck.missing_docs) {
+    errors.push({
       code: "required_memory_doc_missing",
-      message: `Required memory doc is missing: ${doc.resolved_path}`,
-      path: doc.resolved_path,
+      message: `Required memory doc is missing: ${missingDoc.resolved_path}`,
+      path: missingDoc.resolved_path,
       project_code: project.project_code,
-    }),
-  );
+    });
+  }
 
   return {
     ok: errors.length === 0,
@@ -204,10 +226,17 @@ export function checkRequiredMemoryDocs(
     },
   );
 
+  const missingDocs = requiredDocs.filter((doc) => !doc.exists);
+
+  const allStandardDocsDeclared = STANDARD_REQUIRED_MEMORY_DOCS.every((standardDoc) =>
+    project.required_memory_docs.includes(standardDoc),
+  );
+
   return {
     memory_root: path.resolve(project.memory_root),
     required_docs: requiredDocs,
-    missing_docs: requiredDocs.filter((doc) => !doc.exists),
+    missing_docs: missingDocs,
+    standard_docs_satisfied: allStandardDocsDeclared && missingDocs.length === 0,
   };
 }
 
@@ -309,7 +338,58 @@ function validateProjectRequiredFields(
   return errors;
 }
 
+function validateRequiredMemoryDocsDefinition(
+  project: ProjectRegistryEntry,
+): ProjectRegistryValidationError[] {
+  const errors: ProjectRegistryValidationError[] = [];
+
+  if (!Array.isArray(project.required_memory_docs)) {
+    return errors;
+  }
+
+  for (const doc of project.required_memory_docs) {
+    if (!doc || doc.trim() === "") {
+      errors.push({
+        code: "invalid_required_memory_doc_path",
+        message: "required_memory_docs must not contain empty value",
+        project_code: project.project_code,
+      });
+
+      continue;
+    }
+
+    if (path.isAbsolute(doc)) {
+      errors.push({
+        code: "invalid_required_memory_doc_path",
+        message: `required_memory_docs must be relative file names under memory_root: ${doc}`,
+        project_code: project.project_code,
+      });
+    }
+
+    if (doc.includes("..")) {
+      errors.push({
+        code: "invalid_required_memory_doc_path",
+        message: `required_memory_docs must not contain parent directory reference: ${doc}`,
+        project_code: project.project_code,
+      });
+    }
+  }
+
+  for (const standardDoc of STANDARD_REQUIRED_MEMORY_DOCS) {
+    if (!project.required_memory_docs.includes(standardDoc)) {
+      errors.push({
+        code: "required_memory_doc_not_declared",
+        message: `Standard required memory doc is not declared: ${standardDoc}`,
+        project_code: project.project_code,
+      });
+    }
+  }
+
+  return errors;
+}
+
 function validateProjectPolicies(
+  registry: ProjectRegistryFile,
   project: ProjectRegistryEntry,
 ): ProjectRegistryValidationError[] {
   const errors: ProjectRegistryValidationError[] = [];
@@ -327,12 +407,28 @@ function validateProjectPolicies(
     });
   }
 
+  if (sourcePolicyId && !resolveSourceStatusPolicyOrNull(registry, project)) {
+    errors.push({
+      code: "invalid_source_status_policy",
+      message: `source_status_policy is not defined in defaults: ${sourcePolicyId}`,
+      project_code: project.project_code,
+    });
+  }
+
   const writePolicyId = project.write_policy?.policy_id;
 
   if (writePolicyId && !VALID_WRITE_POLICIES.includes(writePolicyId)) {
     errors.push({
       code: "invalid_write_policy",
       message: `Invalid write_policy: ${writePolicyId}`,
+      project_code: project.project_code,
+    });
+  }
+
+  if (writePolicyId && !resolveWritePolicyOrNull(registry, project)) {
+    errors.push({
+      code: "invalid_write_policy",
+      message: `write_policy is not defined in defaults: ${writePolicyId}`,
       project_code: project.project_code,
     });
   }
@@ -372,6 +468,133 @@ function validateProjectSourceGroups(
   return warnings;
 }
 
+function validateSourceGroupPatterns(
+  project: ProjectRegistryEntry,
+): ProjectRegistryValidationWarning[] {
+  const warnings: ProjectRegistryValidationWarning[] = [];
+
+  const groups = [
+    ...(project.optional_sources ?? []),
+    ...(project.adr_sources ?? []),
+    ...(project.review_sources ?? []),
+  ];
+
+  for (const group of groups) {
+    if (!group.patterns || group.patterns.length === 0) {
+      warnings.push({
+        code: "source_pattern_group_empty",
+        message: `Source group has no patterns: ${group.source_group}`,
+        project_code: project.project_code,
+      });
+
+      continue;
+    }
+
+    for (const pattern of group.patterns) {
+      if (!pattern || pattern.trim() === "") {
+        warnings.push({
+          code: "invalid_source_pattern",
+          message: `Source pattern must not be empty in group: ${group.source_group}`,
+          project_code: project.project_code,
+        });
+
+        continue;
+      }
+
+      if (path.isAbsolute(pattern) || pattern.includes("..")) {
+        warnings.push({
+          code: "invalid_source_pattern",
+          message: `Source pattern must be a relative path and must not contain parent directory reference: ${pattern}`,
+          path: pattern,
+          project_code: project.project_code,
+        });
+
+        continue;
+      }
+
+      if (!mightMatchExistingPath(pattern)) {
+        warnings.push({
+          code: "source_pattern_not_found",
+          message: `Source pattern may not match existing files: ${pattern}`,
+          path: pattern,
+          project_code: project.project_code,
+        });
+      }
+    }
+  }
+
+  return warnings;
+}
+
+function resolveSourceStatusPolicy(
+  registry: ProjectRegistryFile,
+  project: ProjectRegistryEntry,
+): SourceStatusPolicyConfig {
+  const resolved = resolveSourceStatusPolicyOrNull(registry, project);
+
+  if (!resolved) {
+    throw new Error(
+      `source_status_policy is not defined in defaults: ${project.source_status_policy.policy_id}`,
+    );
+  }
+
+  return resolved;
+}
+
+function resolveSourceStatusPolicyOrNull(
+  registry: ProjectRegistryFile,
+  project: ProjectRegistryEntry,
+): SourceStatusPolicyConfig | null {
+  const inlinePolicy = project.source_status_policy as Partial<SourceStatusPolicyConfig>;
+
+  if (
+    inlinePolicy.include_by_default &&
+    inlinePolicy.explicit_only &&
+    inlinePolicy.warning_required &&
+    inlinePolicy.prohibit_as_final_evidence
+  ) {
+    return inlinePolicy as SourceStatusPolicyConfig;
+  }
+
+  const policyId = project.source_status_policy.policy_id;
+
+  return registry.defaults?.source_status_policies?.[policyId] ?? null;
+}
+
+function resolveWritePolicy(
+  registry: ProjectRegistryFile,
+  project: ProjectRegistryEntry,
+): WritePolicyConfig {
+  const resolved = resolveWritePolicyOrNull(registry, project);
+
+  if (!resolved) {
+    throw new Error(
+      `write_policy is not defined in defaults: ${project.write_policy.policy_id}`,
+    );
+  }
+
+  return resolved;
+}
+
+function resolveWritePolicyOrNull(
+  registry: ProjectRegistryFile,
+  project: ProjectRegistryEntry,
+): WritePolicyConfig | null {
+  const inlinePolicy = project.write_policy as Partial<WritePolicyConfig>;
+
+  if (
+    inlinePolicy.ai_can &&
+    inlinePolicy.ai_must_not &&
+    inlinePolicy.human_approval_required_for
+  ) {
+    return inlinePolicy as WritePolicyConfig;
+  }
+
+  const policyId = project.write_policy.policy_id;
+
+  return registry.defaults?.write_policies?.[policyId] ?? null;
+}
+
 function flattenSourceGroups(
   groups: SourceGroup[],
   sourceType: SourceCandidate["source_type"],
@@ -384,4 +607,31 @@ function flattenSourceGroups(
       description: group.description,
     })),
   );
+}
+
+/**
+ * Lightweight existence heuristic for glob-like patterns.
+ *
+ * This service does not fully expand glob patterns.
+ * Full source selection and glob expansion should be handled by Context Builder.
+ *
+ * The purpose here is to detect obvious registry mistakes early.
+ */
+function mightMatchExistingPath(pattern: string): boolean {
+  const normalizedPattern = pattern.replace(/\\/g, "/");
+
+  if (!normalizedPattern.includes("*")) {
+    return fs.existsSync(path.resolve(normalizedPattern));
+  }
+
+  const staticPrefix = normalizedPattern.split("*")[0];
+  const directoryPrefix = staticPrefix.endsWith("/")
+    ? staticPrefix
+    : path.dirname(staticPrefix);
+
+  if (!directoryPrefix || directoryPrefix === ".") {
+    return true;
+  }
+
+  return fs.existsSync(path.resolve(directoryPrefix));
 }

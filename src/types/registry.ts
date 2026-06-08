@@ -31,6 +31,13 @@ export type SourceGroupType =
   | "code"
   | "additional_source";
 
+export type StandardRequiredMemoryDoc =
+  | "project-summary.md"
+  | "current-status.md"
+  | "active-decisions.md"
+  | "next-actions.md"
+  | "ai-entrypoint.md";
+
 export interface ProjectRegistryFile {
   registry_schema_version: string;
   registry_status: ProjectStatus;
@@ -41,10 +48,10 @@ export interface ProjectRegistryFile {
 }
 
 export interface ProjectRegistryDefaults {
-  required_memory_docs?: string[];
-  source_status_policy?: SourceStatusPolicyId;
-  write_policy?: WritePolicyId;
+  required_memory_docs?: StandardRequiredMemoryDoc[];
   source_selection_policy?: SourceSelectionPolicy;
+  source_status_policies?: Partial<Record<SourceStatusPolicyId, SourceStatusPolicyConfig>>;
+  write_policies?: Partial<Record<WritePolicyId, WritePolicyConfig>>;
 }
 
 export interface SourceSelectionPolicy {
@@ -95,9 +102,13 @@ export interface ProjectRegistryEntry {
    */
   review_sources?: SourceGroup[];
 
-  source_status_policy: SourceStatusPolicyConfig;
+  source_status_policy: PolicyReference<SourceStatusPolicyId> | SourceStatusPolicyConfig;
 
-  write_policy: WritePolicyConfig;
+  write_policy: PolicyReference<WritePolicyId> | WritePolicyConfig;
+}
+
+export interface PolicyReference<TPolicyId extends string> {
+  policy_id: TPolicyId;
 }
 
 export interface SourceGroup {
@@ -140,6 +151,8 @@ export interface ProjectRegistryValidationError {
     | "duplicate_project_code"
     | "memory_root_not_found"
     | "required_memory_doc_missing"
+    | "required_memory_doc_not_declared"
+    | "invalid_required_memory_doc_path"
     | "invalid_source_status_policy"
     | "invalid_write_policy";
 
@@ -154,6 +167,8 @@ export interface ProjectRegistryValidationWarning {
     | "adr_sources_empty"
     | "review_sources_empty"
     | "source_pattern_not_found"
+    | "invalid_source_pattern"
+    | "source_pattern_group_empty"
     | "unknown_status_policy_detail"
     | "required_memory_docs_not_default";
 
@@ -166,6 +181,11 @@ export interface RequiredMemoryDocsCheckResult {
   memory_root: string;
   required_docs: RequiredMemoryDocCheck[];
   missing_docs: RequiredMemoryDocCheck[];
+
+  /**
+   * True when all standard required memory docs are declared and exist.
+   */
+  standard_docs_satisfied: boolean;
 }
 
 export interface RequiredMemoryDocCheck {
@@ -176,6 +196,8 @@ export interface RequiredMemoryDocCheck {
 
 export interface ResolvedProjectRegistry {
   project: ProjectRegistryEntry;
+  source_status_policy: SourceStatusPolicyConfig;
+  write_policy: WritePolicyConfig;
   required_docs_check: RequiredMemoryDocsCheckResult;
 }
 

@@ -2,8 +2,8 @@
 title: "Source Status Policy"
 document_id: "docs/context/source-status-policy.md"
 document_role: "context_source_status_policy"
-status: "draft"
-version: "0.1.0"
+status: "active"
+version: "1.0.0"
 created_at: "2026-06-08"
 updated_at: "2026-06-08"
 phase: "Phase 2: Context Forge"
@@ -22,7 +22,7 @@ related_documents:
 
 ## 1. Status
 
-`draft`
+`active`
 
 ---
 
@@ -45,6 +45,7 @@ Project Registryの `source_status_policy` は、本書の方針に基づいて�
 - draft / proposed / archived等の警告ルール
 - 確定判断の根拠として扱えるstatus
 - `required_memory_docs` とContext Pack投入対象の分離
+- optional source / ADR source / review sourceの採用条件
 - Source List / Warnings / Build Reportへの出力ルール
 
 ### 3.2 Out of Scope
@@ -196,7 +197,7 @@ required_memory_docs:
   - "active-decisions.md"
   - "next-actions.md"
   - "ai-entrypoint.md"
-```
+````
 
 ### 6.3 Prohibited Interpretation
 
@@ -220,21 +221,21 @@ Context Packへ実際に含める文書は、以下に基づいて決定する�
 
 ### 6.5 Missing Required Memory Docs
 
-`required_memory_docs` に指定された文書が存在しない場合、Context Builderは以下を行う。
+`required_memory_docs` に指定された文書が存在しない場合、Context BuilderまたはProject Registry validationは以下を行う。
 
-- Build Reportに missing_required_doc を出力する
-- Warningsに不足文書を出力する
-- Context Pack生成を継続するか停止するかはBuild Ruleに従う
+* Build Reportに `missing_required_doc` を出力する
+* WarningsまたはErrorsに不足文書を出力する
+* Context Pack生成を継続するか停止するかはBuild Ruleに従う
 
 M2-2時点の推奨初期動作は以下とする。
 
-| Situation                 | Recommended Behavior         |
-| ------------------------- | ---------------------------- |
-| `project-summary.md` がない  | error                        |
-| `current-status.md` がない   | error                        |
-| `active-decisions.md` がない | error                        |
-| `next-actions.md` がない     | error                        |
-| `ai-entrypoint.md` がない    | warningまたはerror。MVPではerror推奨 |
+| Situation                 | Recommended Behavior |
+| ------------------------- | -------------------- |
+| `project-summary.md` がない  | error                |
+| `current-status.md` がない   | error                |
+| `active-decisions.md` がない | error                |
+| `next-actions.md` がない     | error                |
+| `ai-entrypoint.md` がない    | error                |
 
 ---
 
@@ -255,27 +256,88 @@ M2-2時点の推奨初期動作は以下とする。
 
 ---
 
-## 8. Warning Rules
+## 8. Optional / ADR / Review Source Selection Rules
 
-Context Builderは以下の場合、Warningsに明示する。
+### 8.1 `optional_sources`
 
-| Warning Type                 | Trigger                           |
-| ---------------------------- | --------------------------------- |
-| `missing_required_doc`       | `required_memory_docs` の存在検証に失敗した |
-| `draft_source_included`      | draft sourceを含めた                  |
-| `proposed_source_included`   | proposed sourceを含めた               |
-| `archived_source_included`   | archived sourceを含めた               |
-| `deprecated_source_included` | deprecated sourceを含めた             |
-| `superseded_source_included` | superseded sourceを含めた             |
-| `unknown_status`             | statusを判定できなかった                   |
-| `conflict_detected`          | source間で競合が見つかった                  |
-| `recent_context_conflict`    | Recent ContextがActive正本と競合した      |
-| `source_excluded`            | policyによりsourceを除外した              |
-| `token_budget_exceeded`      | token budgetを超えた                  |
+`optional_sources` は、Task Request、Agent Registry、Additional Sources、またはBuild Ruleにより要求された場合にContext Pack投入候補とする。
+
+`optional_sources` は、Project Registryに登録されているだけではContext Packへ自動投入しない。
+
+`optional_sources` の主な用途は以下である。
+
+* タスク固有の設計文書を追加する
+* 実装レビュー時に関連ソースコードを追加する
+* 特定PhaseやMilestoneの文書を追加する
+* Agentの専門性に応じて追加文脈を与える
+
+### 8.2 `adr_sources`
+
+`adr_sources` は、設計判断、方針確認、競合解決、Active化レビュー時に優先的に参照する。
+
+activeまたはacceptedのADRは、同一論点において以下より上位の根拠として扱う。
+
+* draft文書
+* proposed文書
+* recent context
+* conversation summary
+* review source
+* additional source
+
+ただし、ADR sourceも常時全文投入対象ではない。
+Task Request、Agent Registry、Build Rule、Source Status Policy、token budgetに基づき選定する。
+
+ADR sourceに競合がある場合、Context Builderは以下を行う。
+
+* Warningsに `adr_conflict_detected` を出力する
+* Build Reportに競合sourceを記録する
+* 確定判断を避け、Issue候補として扱う
+
+### 8.3 `review_sources`
+
+`review_sources` は、完了条件確認、Active化レビュー、検証履歴確認、過去指摘事項の追跡に使用する。
+
+review sourceは、判断の経緯や検証結果として扱う。
+ただし、設計判断そのものの正本は、active memory docsまたはaccepted ADRを優先する。
+
+`review_sources` は、Project Registryに登録されているだけではContext Packへ自動投入しない。
+
+主な用途は以下である。
+
+* Active化前レビュー
+* Phase完了レビュー
+* P0/P1修正履歴の確認
+* 過去のテスト結果確認
+* 未解決Issueの追跡
 
 ---
 
-## 9. Build Report Requirements
+## 9. Warning Rules
+
+Context Builderは以下の場合、Warningsに明示する。
+
+| Warning Type                       | Trigger                                      |
+| ---------------------------------- | -------------------------------------------- |
+| `missing_required_doc`             | `required_memory_docs` の存在検証に失敗した            |
+| `required_memory_doc_not_declared` | 標準5文書の一部が `required_memory_docs` に宣言されていない   |
+| `invalid_required_memory_doc_path` | `required_memory_docs` に空文字、絶対パス、`../` が含まれる |
+| `draft_source_included`            | draft sourceを含めた                             |
+| `proposed_source_included`         | proposed sourceを含めた                          |
+| `archived_source_included`         | archived sourceを含めた                          |
+| `deprecated_source_included`       | deprecated sourceを含めた                        |
+| `superseded_source_included`       | superseded sourceを含めた                        |
+| `unknown_status`                   | statusを判定できなかった                              |
+| `conflict_detected`                | source間で競合が見つかった                             |
+| `adr_conflict_detected`            | ADR間またはADRと他source間で競合が見つかった                 |
+| `recent_context_conflict`          | Recent ContextがActive正本と競合した                 |
+| `source_excluded`                  | policyによりsourceを除外した                         |
+| `source_pattern_not_found`         | source patternに一致するファイルが見つからなかった             |
+| `invalid_source_pattern`           | source patternが空文字、絶対パス、`../` を含む            |
+| `token_budget_exceeded`            | token budgetを超えた                             |
+
+---
+
+## 10. Build Report Requirements
 
 Build Reportには、最低限以下を出力する。
 
@@ -293,48 +355,50 @@ Build Reportには、最低限以下を出力する。
 
 ---
 
-## 10. Write Policy Boundary
+## 11. Write Policy Boundary
 
 Source Status Policyは、sourceをどう読むかを定義する。
 Write Policyは、Context生成後にAIが何をしてよいかを定義する。
 
 M2-2時点では、Project Registryの標準 `write_policy` は `draft_only` とする。
 
-### 10.1 `draft_only`
+### 11.1 `draft_only`
 
 AIは以下を行える。
 
-- draft文書を作成する
-- review結果を作成する
-- update proposalを作成する
-- diff案を作成する
-- warning / issue候補を作成する
+* draft文書を作成する
+* review結果を作成する
+* update proposalを作成する
+* diff案を作成する
+* warning / issue候補を作成する
 
 AIは以下を行ってはならない。
 
-- active文書を直接更新する
-- draftをactive扱いする
-- proposedをdecision扱いする
-- archivedを現在有効な根拠として扱う
-- 人間承認なしに正本statusを変更する
+* active文書を直接更新する
+* draftをactive扱いする
+* proposedをdecision扱いする
+* archivedを現在有効な根拠として扱う
+* 人間承認なしに正本statusを変更する
 
 ---
 
-## 11. Acceptance Criteria
+## 12. Acceptance Criteria
 
-本書は以下を満たすとき、M2-2の成果物として妥当と判断する。
+本書は以下を満たすため、M2-2のActive成果物として扱う。
 
-- `required_memory_docs` が存在検証対象であることを明記している
-- `required_memory_docs` が常時全文投入対象ではないことを明記している
-- active / accepted / draft / proposed / superseded / deprecated / archived / unknown の扱いを定義している
-- Warnings / Source List / Build Reportへの出力方針を定義している
-- Project Registryの `source_status_policy` と接続できる
-- `write_policy` との責務境界が明確である
+* `required_memory_docs` が存在検証対象であることを明記している
+* `required_memory_docs` が常時全文投入対象ではないことを明記している
+* active / accepted / draft / proposed / superseded / deprecated / archived / unknown の扱いを定義している
+* optional source / ADR source / review sourceの採用条件を定義している
+* Warnings / Source List / Build Reportへの出力方針を定義している
+* Project Registryの `source_status_policy` と接続できる
+* `write_policy` との責務境界が明確である
 
 ---
 
-## 12. Revision History
+## 13. Revision History
 
-| Version | Date       | Status | Summary                                                 | Author    |
-| ------- | ---------- | ------ | ------------------------------------------------------- | --------- |
-| 0.1.0   | 2026-06-08 | draft  | M2-2 Project Registry定義に合わせ、source status policyの初版を作成。 | user / AI |
+| Version | Date       | Status | Summary                                                                                          | Author    |
+| ------- | ---------- | ------ | ------------------------------------------------------------------------------------------------ | --------- |
+| 0.1.0   | 2026-06-08 | draft  | M2-2 Project Registry定義に合わせ、source status policyの初版を作成。                                          | user / AI |
+| 1.0.0   | 2026-06-08 | active | P0/P1レビュー結果を反映し、optional / ADR / review sourceの採用条件、required_memory_docsの禁止解釈、warning rulesを明確化。 | user / AI |
