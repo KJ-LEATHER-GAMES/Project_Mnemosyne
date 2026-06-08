@@ -131,7 +131,7 @@ Project × Agent × Task に関連する追加情報を
 | P3-OBJ-002 | 文書を検索可能な単位へ分割するチャンク化ルールを定義する                                |
 | P3-OBJ-003 | 情報種別、状態、出典、更新日時等のmetadataを保持できるようにする                        |
 | P3-OBJ-004 | 文書内容を索引化し、自然文クエリに対する関連記憶検索を可能にする                            |
-| P3-OBJ-005 | `active / accepted` 情報を優先し、古い情報を無条件に主要Contextへ含めない検索制御を実現する |
+| P3-OBJ-005 | `active` 情報を優先し、古い情報を無条件に主要Contextへ含めない検索制御を実現する |
 | P3-OBJ-006 | ProjectおよびAgentに応じて検索対象範囲と結果の扱いを変更できるようにする                  |
 | P3-OBJ-007 | 検索結果を根拠付きのSearch Result ContextとしてContext Packへ組み込めるようにする   |
 | P3-OBJ-008 | 検索結果の出典、状態、関連度および警告を人間が確認できるようにする                           |
@@ -241,9 +241,7 @@ Phase 3初期では、以下を索引対象とする。
 | status       |  索引登録 | 通常検索結果への表示 |  履歴検索時の表示 |
 | ------------ | ----: | ---------: | --------: |
 | `active`     |     可 |       表示対象 |      表示対象 |
-| `accepted`   |     可 |       表示対象 |      表示対象 |
 | `draft`      | 条件付き可 |       原則除外 | 明示指定時のみ表示 |
-| `proposed`   | 条件付き可 |       原則除外 | 明示指定時のみ表示 |
 | `superseded` |     可 |       原則除外 |      表示対象 |
 | `deprecated` |     可 |       原則除外 |    警告付き表示 |
 | `archived`   | 条件付き可 |       原則除外 | 明示指定時のみ表示 |
@@ -336,7 +334,7 @@ docs/recall/chunk-policy.md
 | `chunk_index`     | 元文書内の順序                                     |
 | `chunk_text`      | 検索対象テキスト                                    |
 | `memory_type`     | fact / decision / task / issue等。判断可能な場合のみ設定 |
-| `status`          | active / accepted / superseded等             |
+| `status`          | draft / active / superseded / deprecated / archived |
 | `updated_at`      | 文書または記憶情報の更新日時                              |
 | `content_hash`    | 内容変更を検出するための値                               |
 | `indexed_at`      | 索引化した日時                                     |
@@ -432,7 +430,7 @@ docs/recall/index-build-rule.md
 | `agent_code`      | Agent別の検索範囲調整に使用。任意指定              |
 | `source_types`    | 対象文書種別の絞り込み。任意指定                   |
 | `memory_types`    | decision / test_result等の絞り込み。任意指定  |
-| `statuses`        | 通常はactive / acceptedを基本とする         |
+| `statuses`        | 通常は `active` を基本とする                    |
 | `top_k`           | 取得件数                               |
 | `include_history` | superseded / deprecated等を検索する場合の指定 |
 
@@ -454,9 +452,9 @@ npm run memory:search -- \
 
 #### 通常検索の基本動作
 
-* `active` および `accepted` 情報を優先する。
+* `active` 情報を優先する。
 * `superseded`、`deprecated`、`archived` は通常検索から除外する。
-* `draft`、`proposed` は明示指定がない限り主要結果へ含めない。
+* `draft` は明示指定がない限り主要結果へ含めない。
 * 結果には必ず出典および状態を含める。
 * 検索結果が不足する場合は、不足していることを明示する。
 
@@ -481,7 +479,7 @@ docs/recall/search-policy.md
 | -------------------- | --------------------------------- |
 | Semantic Retrieval   | 自然文で意味的に近いchunkを取得できる             |
 | Metadata Filtering   | project、source type、status等で絞り込める |
-| Status-aware Ranking | active / accepted情報を優先できる         |
+| Status-aware Ranking | `active` 情報を優先できる                    |
 | Source Traceability  | 検索結果の出典を提示できる                     |
 | Re-indexing          | 正本文書更新後に索引を更新できる                  |
 
@@ -513,10 +511,10 @@ docs/recall/search-policy.md
 
 | 条件                      | 処理                          |
 | ----------------------- | --------------------------- |
-| `active` または `accepted` | 通常検索の主要候補として扱う              |
+| `active`                  | 通常検索の主要候補として扱う              |
 | `superseded`            | 通常検索では除外し、履歴比較指定時のみ表示する     |
 | `deprecated`            | 通常検索では除外し、必要時のみ警告付きで表示する    |
-| `draft` または `proposed`  | 明示的に未確定情報を求めた場合のみ表示する       |
+| `draft`                   | 明示的に未確定情報を求めた場合のみ表示する       |
 | `archived`              | 履歴確認または過去検証確認時のみ表示する        |
 | 同一論点で新旧情報が存在する          | 新しいactive情報を優先し、旧情報の置換関係を示す |
 
@@ -813,7 +811,7 @@ docs/phases/phase-4-input-requirements.md
 | P3-C-005 | Phase 3ではMemory APIを実装しない                                   |
 | P3-C-006 | Phase 3ではMCP Serverを実装しない                                   |
 | P3-C-007 | Phase 3ではAgentの自律実行および統括処理を実装しない                            |
-| P3-C-008 | 通常検索では `active` および `accepted` 情報を優先し、古い情報は原則除外する           |
+| P3-C-008 | 通常検索では `active` 情報を優先し、`draft` および古い情報は原則除外する                  |
 | P3-C-009 | 検索技術の具体選定は設計仕様書で確定し、要件定義では能力と制約を定義する                        |
 | P3-C-010 | Project間横断検索は、個別Project検索の安全性と精度が確認されるまで初期必須範囲に含めない         |
 | P3-C-011 | Notion副本の検索は、正本同期方針が確定するまで初期必須範囲に含めない                       |
@@ -1089,7 +1087,7 @@ Phase 3は、以下をすべて満たした時点で完了とする。
 | P3-OI-002 | PostgreSQL + pgvectorを採用するか           | 有力候補として保持                  | データ設計・運用負荷比較後に判断    |
 | P3-OI-003 | Keyword SearchまたはHybrid Searchを必須化するか | 意味検索の品質不足時の改善候補            | 検証結果に基づき判断          |
 | P3-OI-004 | Embeddingモデルの選定                       | 要件定義では確定しない                | 実装設計時に判断            |
-| P3-OI-005 | Conversation Summaryをどの承認状態から検索対象にするか | reviewed / reflectedを候補とする | 運用設計で確定             |
+| P3-OI-005 | Conversation Summaryの検索条件の実装方式 | 通常検索は `review_status: reviewed / reflected`、履歴確認は `archived` を対象とする | Recall Engine設計時にfilter実装を確定 |
 | P3-OI-006 | Project横断検索を導入するか                     | 初期範囲外                      | 単一Project検索の検証後に判断  |
 | P3-OI-007 | Context Packのtoken上限と検索結果件数制御         | 件数制御を要件とする                 | 検証後に具体値を決定          |
 | P3-OI-008 | 索引更新を手動実行にするか自動化するか                   | CLIによる手動実行を初期候補とする         | Phase 4以降で再判断       |
@@ -1159,12 +1157,12 @@ Phase 4は、Phase 3までに構築した正本参照・Context生成・関連�
 ### constraint
 
 * JP: Phase 3では、Memory API、MCP Server、正本自動更新、Agent自律実行、Notion副本検索、Project横断検索を初期必須範囲に含めない。 / EN: Phase 3 does not initially require Memory APIs, MCP servers, automatic source updates, autonomous agents, Notion secondary-view search, or cross-project search.
-* JP: 通常検索では `active` および `accepted` 情報を優先し、`superseded`、`deprecated`、`draft`、`proposed`、`archived` 情報は原則除外または明示指定時のみ扱う。 / EN: Normal search prioritizes `active` and `accepted` information; `superseded`, `deprecated`, `draft`, `proposed`, and `archived` information is normally excluded or shown only when explicitly requested.
+* JP: 通常検索では `active` 情報を優先し、`superseded`、`deprecated`、`draft`、`archived` 情報は原則除外または明示指定時のみ扱う。 / EN: Normal search prioritizes `active` information; `superseded`, `deprecated`, `draft`, and `archived` information is normally excluded or shown only when explicitly requested.
 
 ### issue
 
 * JP: Vector Storeの具体技術、PostgreSQL + pgvector採用可否、Embeddingモデル、KeywordまたはHybrid Searchの採用要否は未確定である。 / EN: The specific vector store, possible PostgreSQL + pgvector use, embedding model, and whether to use keyword or hybrid search remain undecided.
-* JP: Conversation Summaryをどの承認状態から検索対象へ含めるか、Context Packの件数・token制御をどの程度実装するかは、検証後に確定する必要がある。 / EN: The approval status required for searchable Conversation Summaries and the level of Context Pack result/token control must be finalized after validation.
+* JP: Conversation Summaryは、通常検索で `review_status: reviewed` または `reflected` のみを対象とし、`archived` は履歴確認時のみ対象とする。Context Packの件数・token制御は検証後に確定する必要がある。 / EN: Normal search includes only Conversation Summaries with `review_status: reviewed` or `reflected`, while `archived` is used only for history checks. Context Pack result and token limits must be finalized after validation.
 
 ### idea
 
