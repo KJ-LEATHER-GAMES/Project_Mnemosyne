@@ -3,22 +3,24 @@
 title: "Phase 2: Context Forge 作業計画書"
 document_id: "docs/phases/phase-2-context-forge.md"
 document_role: "phase_plan"
-status: "draft"
-version: "0.1.0"
+status: "active"
+version: "1.0.0"
 created_at: "2026-06-08"
 updated_at: "2026-06-08"
 phase: "Phase 2: Context Forge"
 previous_phase: "Phase 1: Memory Foundation"
 next_phase: "Phase 3: Recall Engine"
+m2_status: "M2-0 active"
+review_status: "active"
 related_documents:
 
-- "docs/phases/phase-1-memory-foundation.md"
-- "docs/phases/phase-2-input-requirements.md"
-- "docs/adr/ADR-001-docs-as-source-of-memory.md"
-- "docs/adr/ADR-002-memory-source-of-truth-boundary.md"
-- "docs/adr/ADR-003-human-approved-memory-update.md"
-- "docs/adr/ADR-004-project-independent-memory-template.md"
-- "docs/adr/ADR-005-agent-context-separation.md"
+* "docs/phases/phase-1-memory-foundation.md"
+* "docs/phases/phase-2-input-requirements.md"
+* "docs/adr/ADR-001-docs-as-source-of-memory.md"
+* "docs/adr/ADR-002-memory-source-of-truth-boundary.md"
+* "docs/adr/ADR-003-human-approved-memory-update.md"
+* "docs/adr/ADR-004-project-independent-memory-template.md"
+* "docs/adr/ADR-005-agent-context-separation.md"
 
 ---
 
@@ -26,7 +28,11 @@ related_documents:
 
 ## 1. Status
 
-`draft`
+`active`
+
+本書は、Project Mnemosyneにおける **Phase 2: Context Forge** の作業計画書である。
+
+本書は、M2-0：Phase 2方針確定の成果物としてActive化する。
 
 ---
 
@@ -36,7 +42,7 @@ Phase 2: Context Forge は、Phase 1: Memory Foundation で整備した記憶文
 
 Phase 1では、AIが参照する記憶の正本構造、分類、状態、参照優先順位、人間承認ルールを整備した。
 
-Phase 2では、それらの正本を直接AIに丸ごと渡すのではなく、対象プロジェクト、利用する専門Agent、今回の作業目的に応じて、必要な情報だけをContext Packとして組み立てる。
+Phase 2では、それらの正本をAIに丸ごと渡すのではなく、対象プロジェクト、利用する専門Agent、今回の作業目的に応じて、必要な情報だけをContext Packとして組み立てる。
 
 ---
 
@@ -74,7 +80,7 @@ Phase 2の目的は、Project Mnemosyneにおいて、AIへ渡すContextを手�
 4. AIへ渡す前に、人間が内容を確認できるContext Previewを生成する
 5. ChatGPT / Cursor等へ貼り付け可能なMarkdown形式のContext Packを生成する
 6. 読み込んだ文書、除外した文書、不足Context、警告をBuild Reportとして出力する
-7. Phase 3: Recall Engineへ渡す不足情報・検索要件を整理する
+7. Phase 3: Recall Engineへ渡す検索導入要件を整理する
 
 ---
 
@@ -128,22 +134,108 @@ Phase 2の目的は、Project Mnemosyneにおいて、AIへ渡すContextを手�
 
 ---
 
-## 8. 成果物一覧
+## 8. Naming Policy
 
-### 8.1 設計・運用文書
+Phase 2では、成果物名とCLI配置名の揺れを避けるため、以下の名称へ統一する。
 
-| Path                                        | Purpose                       | Priority |
-| ------------------------------------------- | ----------------------------- | -------- |
-| `docs/phases/phase-2-context-forge.md`      | Phase 2作業計画書                  | P0       |
-| `docs/context/context-pack-structure.md`    | Context Pack標準構造              | P0       |
-| `docs/context/context-build-rule.md`        | Context組成ルール                  | P0       |
-| `docs/context/source-status-policy.md`      | active / draft / archived等の扱い | P0       |
-| `docs/context/recent-context-policy.md`     | Recent Contextの扱い             | P0       |
-| `docs/context/additional-sources-policy.md` | 追加source指定ルール                 | P1       |
-| `docs/context/build-report-rule.md`         | Build Report出力ルール             | P1       |
-| `docs/phases/phase-3-input-requirements.md` | Phase 3へ渡す検索導入要件              | P0       |
+### 8.1 採用する成果物名
 
-### 8.2 設定ファイル
+| Category                  | Adopted Name                                | Notes                                                           |
+| ------------------------- | ------------------------------------------- | --------------------------------------------------------------- |
+| Context Pack標準構造          | `docs/context/context-pack-structure.md`    | `context-pack-format.md` は採用しない                                 |
+| Context組成ルール              | `docs/context/context-build-rule.md`        | Project × Agent × Taskの組成ルールを定義する                               |
+| Source Status Policy      | `docs/context/source-status-policy.md`      | active / draft / archived等の扱いを定義する                              |
+| Recent Context Policy     | `docs/context/recent-context-policy.md`     | Session Context / Recent Context / Conversation Summaryの関係を定義する |
+| Additional Sources Policy | `docs/context/additional-sources-policy.md` | タスク固有sourceの指定ルールを定義する                                          |
+| Build Report Rule         | `docs/context/build-report-rule.md`         | Build Reportの出力項目を定義する                                          |
+| Project Registry          | `config/projects.yaml`                      | project_codeとmemory_root等を管理する                                  |
+| Agent Registry            | `config/agents.yaml`                        | agent_code、required_context、output_contract等を管理する               |
+| CLI実体                     | `src/cli/context-build.ts`                  | `scripts/context-build.ts` ではなく `src/cli/` に配置する                |
+| User Command              | `npm run context:build`                     | ユーザー操作口として使用する                                                  |
+
+### 8.2 採用しない名称
+
+| Non-Adopted Name                         | Replacement                              |
+| ---------------------------------------- | ---------------------------------------- |
+| `docs/context/context-pack-format.md`    | `docs/context/context-pack-structure.md` |
+| `docs/context/agent-context-profiles.md` | `config/agents.yaml`                     |
+| `scripts/context-build.ts`               | `src/cli/context-build.ts`               |
+
+---
+
+## 9. Context Layering Policy
+
+Phase 2では、AIに渡すContextを以下の階層で扱う。
+
+```text
+Base Context
+Project Context
+Agent Context
+Session Context
+Recent Conversation Context
+Task Context
+Additional Sources
+```
+
+### 9.1 Context階層の定義
+
+| Context Type                | Description        | Source Example                                                                     | Priority              |
+| --------------------------- | ------------------ | ---------------------------------------------------------------------------------- | --------------------- |
+| Base Context                | 汎用Agent共通ルール       | common rules / safety rules                                                        | high                  |
+| Project Context             | プロジェクト固有の正本文脈      | project-summary / current-status / active-decisions / next-actions / ai-entrypoint | high                  |
+| Agent Context               | Agentの役割・参照要件・出力契約 | `config/agents.yaml`                                                               | high                  |
+| Session Context             | 現在の作業セッション情報       | 今回のテーマ、作業中の論点、検討中ファイル                                                              | medium                |
+| Recent Conversation Context | 直近会話や未反映指示の要約      | conversation-summary、ユーザー入力の要約                                                     | medium-low            |
+| Task Context                | 今回の具体指示            | task_request、対象ファイル、追加条件                                                           | high for current task |
+| Additional Sources          | タスク固有の追加文書・コード     | docs / src / review files                                                          | depends on status     |
+
+### 9.2 Session Context / Recent Context / Conversation Summary の関係
+
+Phase 2では、`Session Context`、`Recent Conversation Context`、`Conversation Summary` を以下のように区別する。
+
+| Term                        | Meaning                        | Source of Truth? | Context Pack Handling            |
+| --------------------------- | ------------------------------ | ---------------: | -------------------------------- |
+| Session Context             | 現在の作業セッションで使う一時的な作業文脈          |               no | Context Build Request時に指定される一時入力 |
+| Recent Conversation Context | 直近会話・未反映指示をContext Pack内で表現する章 |               no | Active正本より下位の参考Contextとして扱う      |
+| Conversation Summary        | 会話内容を分類・要約した文書                 |    no by default | review_status / statusに応じて扱う     |
+| Active Memory Docs          | 承認済みのProject Memory            |              yes | Recent Contextより優先する             |
+| Active ADR                  | 承認済みの設計判断                      |              yes | 原則として最上位の判断根拠にする                 |
+
+### 9.3 Recent Contextの制約
+
+Phase 2では、Session Contextを独立した正本とは扱わない。
+
+Session Contextは、Context Build Request時に指定される一時的な入力文脈である。
+
+Context Pack内では、直近会話や未反映指示を `Recent Conversation Context` として表現する。
+
+ただし、以下を守る。
+
+1. Recent Conversation ContextはActive正本文書より優先しない
+2. Recent Conversation ContextはActive ADRより優先しない
+3. Conversation Summaryは未承認の可能性があるため、status / review_statusを明示する
+4. 未反映の決定・タスク・Issueは確定扱いしない
+5. Active正本とRecent Contextが矛盾する場合はWarningに出す
+6. 必要に応じてPhase3またはMemory Update Flow側で正本化候補として扱う
+
+---
+
+## 10. 成果物一覧
+
+### 10.1 設計・運用文書
+
+| Path                                        | Purpose                                                    | Priority |
+| ------------------------------------------- | ---------------------------------------------------------- | -------- |
+| `docs/phases/phase-2-context-forge.md`      | Phase 2作業計画書                                               | P0       |
+| `docs/context/context-pack-structure.md`    | Context Pack標準構造                                           | P0       |
+| `docs/context/context-build-rule.md`        | Context組成ルール                                               | P0       |
+| `docs/context/source-status-policy.md`      | active / draft / archived等の扱い                              | P0       |
+| `docs/context/recent-context-policy.md`     | Session Context / Recent Context / Conversation Summaryの扱い | P0       |
+| `docs/context/additional-sources-policy.md` | 追加source指定ルール                                              | P1       |
+| `docs/context/build-report-rule.md`         | Build Report出力ルール                                          | P1       |
+| `docs/phases/phase-3-input-requirements.md` | Phase 3へ渡す検索導入要件                                           | P0       |
+
+### 10.2 設定ファイル
 
 | Path                                 | Purpose                             | Priority |
 | ------------------------------------ | ----------------------------------- | -------- |
@@ -151,7 +243,7 @@ Phase 2の目的は、Project Mnemosyneにおいて、AIへ渡すContextを手�
 | `config/agents.yaml`                 | Agent Registry                      | P0       |
 | `config/context-build-defaults.yaml` | token budget、出力先、status policy等の初期値 | P1       |
 
-### 8.3 テンプレート
+### 10.3 テンプレート
 
 | Path                                                       | Purpose              | Priority |
 | ---------------------------------------------------------- | -------------------- | -------- |
@@ -160,7 +252,7 @@ Phase 2の目的は、Project Mnemosyneにおいて、AIへ渡すContextを手�
 | `templates/context/build-report.template.md`               | Build Report出力テンプレート | P1       |
 | `templates/context/phase-3-input-requirements.template.md` | Phase 3入力要件整理テンプレート  | P1       |
 
-### 8.4 CLI / 実装
+### 10.4 CLI / 実装
 
 | Path                                     | Purpose                             | Priority |
 | ---------------------------------------- | ----------------------------------- | -------- |
@@ -175,7 +267,7 @@ Phase 2の目的は、Project Mnemosyneにおいて、AIへ渡すContextを手�
 | `src/types/registry.ts`                  | Registry関連型定義                       | P0       |
 | `src/utils/tokenEstimate.ts`             | token概算補助                           | P2       |
 
-### 8.5 検証レポート
+### 10.5 検証レポート
 
 | Path                                                       | Purpose                     | Priority |
 | ---------------------------------------------------------- | --------------------------- | -------- |
@@ -183,7 +275,7 @@ Phase 2の目的は、Project Mnemosyneにおいて、AIへ渡すContextを手�
 | `docs/review/phase-2-ats-context-pack-validation.md`       | ATSでのContext Pack生成検証       | P0       |
 | `docs/review/phase-2-context-forge-completion-review.md`   | Phase 2完了レビュー               | P0       |
 
-### 8.6 生成物
+### 10.6 生成物
 
 | Path                                                          | Purpose           |
 | ------------------------------------------------------------- | ----------------- |
@@ -194,7 +286,7 @@ Phase 2の目的は、Project Mnemosyneにおいて、AIへ渡すContextを手�
 
 ---
 
-## 9. 推奨ディレクトリ構成
+## 11. 推奨ディレクトリ構成
 
 ```text
 project-mnemosyne/
@@ -261,7 +353,7 @@ project-mnemosyne/
 
 ---
 
-## 10. Milestones
+## 12. Milestones
 
 ## M2-0：Phase 2方針確定
 
@@ -276,6 +368,7 @@ Phase 2の対象範囲、成果物、完了条件、対象外を固定する。
 3. Phase 2で扱わない範囲を明確化する
 4. 作業計画書を作成する
 5. Phase 2内のマイルストーンを定義する
+6. Active化レビューで検出されたP1修正を反映する
 
 ### 成果物
 
@@ -288,6 +381,24 @@ docs/phases/phase-2-context-forge.md
 * Phase 2の目的、対象範囲、成果物、対象外が説明できる
 * M2-1以降の作業単位が明確になっている
 * Phase 3へ渡すべき情報がPhase 2の完了条件に含まれている
+* 成果物名とCLI配置名の揺れが解消されている
+* `required_memory_docs` の意味が存在検証対象として明確になっている
+* Session Context / Recent Conversation Context / Conversation Summary の関係が説明できる
+
+### M2-0 Active化チェックリスト
+
+| No         | Check                                                                            | Result |
+| ---------- | -------------------------------------------------------------------------------- | ------ |
+| M2-0-R-001 | Phase 2の目的が1文で説明できる                                                              | pass   |
+| M2-0-R-002 | Phase 2のIn Scopeが一覧化されている                                                        | pass   |
+| M2-0-R-003 | Phase 2のOut of Scopeが一覧化されている                                                    | pass   |
+| M2-0-R-004 | Phase 2の成果物が文書・設定・テンプレート・CLI・検証レポートに分かれている                                       | pass   |
+| M2-0-R-005 | M2-1以降の作業単位が定義されている                                                              | pass   |
+| M2-0-R-006 | Phase 3へ渡す情報がDoDに含まれている                                                          | pass   |
+| M2-0-R-007 | RAG / API / MCP / UIへスコープ逸脱していない                                                 | pass   |
+| M2-0-R-008 | 成果物名とCLI配置名の揺れが整理されている                                                           | pass   |
+| M2-0-R-009 | `required_memory_docs` が存在検証対象として定義されている                                         | pass   |
+| M2-0-R-010 | Session Context / Recent Conversation Context / Conversation Summary の関係が明示されている | pass   |
 
 ---
 
@@ -378,6 +489,43 @@ templates/context/context-pack.template.md
 | `source_status_policy` |         yes | draft / active等の扱い          |
 | `write_policy`         |         yes | Context生成後の更新方針             |
 
+### `required_memory_docs` の定義
+
+`required_memory_docs` は、Project Registryが標準記憶構造を満たしているかを確認するための **存在検証対象** である。
+
+これらの文書を常にContext Packへ全文投入することはしない。
+
+実際にContext Packへ含める文書は、以下に基づいて決定する。
+
+1. Agent Registryの `required_context`
+2. Agent Registryの `optional_context`
+3. Task Request
+4. Additional Sources
+5. Source Status Policy
+6. token budget
+7. Build Rule
+
+### `required_memory_docs` の想定例
+
+```yaml
+required_memory_docs:
+  - project-summary.md
+  - current-status.md
+  - active-decisions.md
+  - next-actions.md
+  - ai-entrypoint.md
+```
+
+### `required_memory_docs` の禁止解釈
+
+以下の解釈は禁止する。
+
+```text
+required_memory_docs = 常時全文投入対象
+```
+
+Phase 2では、標準記憶構造の存在確認と、Context Pack投入対象の選定を分離する。
+
 ### 成果物
 
 ```text
@@ -448,7 +596,7 @@ Context Builderへ渡す入力形式を定義する。
 ### 実施内容
 
 1. `project_code`、`agent_code`、`task_request` を必須入力として定義する
-2. `output_type`、`additional_sources`、`recent_context`、`token_budget` を定義する
+2. `output_type`、`additional_sources`、`session_context`、`recent_context`、`token_budget` を定義する
 3. CLI引数と内部Request型の対応を定義する
 4. 入力エラー時の扱いを定義する
 
@@ -464,6 +612,11 @@ context_build_request:
     - "src/usecases/requestRewardUseCase.ts"
     - "src/services/line/lineRewardReplyService.ts"
     - "docs/usecase-contracts.md"
+  session_context:
+    include: true
+    notes:
+      - "今回の焦点はServiceからUseCaseを呼び出す依存方向の妥当性"
+      - "修正後フローはシーケンス図と依存関係図で整理したい"
   recent_context:
     include: true
     source: "conversation-summary"
@@ -475,6 +628,7 @@ context_build_request:
 
 ```text
 docs/context/context-build-rule.md
+docs/context/recent-context-policy.md
 src/types/context.ts
 ```
 
@@ -483,6 +637,7 @@ src/types/context.ts
 * Context Build Requestの必須項目と任意項目が定義されている
 * CLI引数からRequest型へ変換できる
 * 不正な `project_code` / `agent_code` / source指定時の扱いが定義されている
+* Session Context / Recent Conversation Context / Conversation Summaryの扱いが定義されている
 
 ---
 
@@ -656,6 +811,23 @@ Phase 2の固定読み込み型Context生成で不足した情報取得要件を
 4. RAG / 検索が必要なケースと不要なケースを分ける
 5. 検索対象候補、検索単位、metadata要件を整理する
 6. Phase 3で扱うべきOpen Decisionsを整理する
+7. 検索時にもsource status / freshness / evidenceを維持する要件を整理する
+
+### Phase 3へ引き渡す情報
+
+Phase 2完了時点で、以下を `docs/phases/phase-3-input-requirements.md` に整理する。
+
+| Handoff Item            | Description                                                 |
+| ----------------------- | ----------------------------------------------------------- |
+| 固定読み込みで不足した情報           | Context Pack生成だけでは取得しきれなかった情報                               |
+| 検索が必要なsource種別          | docs / ADR / review / conversation-summary / article_note等  |
+| 検索不要なsource種別           | 毎回固定投入すべき情報、または検索対象にしない生成物                                  |
+| metadata要件              | source_path、document_id、status、updated_at、source_type、hash等 |
+| freshness要件             | 古い情報、deprecated情報、superseded情報の扱い                           |
+| evidence要件              | 検索結果に根拠sourceを明示する要件                                        |
+| Agent-aware Retrieval要件 | Agentごとに検索対象や優先度を変える要件                                      |
+| Retrieved Contextの扱い    | Phase3検索結果をContext Packにどう接続するか                             |
+| Phase4入力候補              | API化時に必要になりそうなrequest / response要件                          |
 
 ### 成果物
 
@@ -670,6 +842,7 @@ templates/context/phase-3-input-requirements.template.md
 * Phase3で検索対象にすべき文書候補が整理されている
 * Agentごとに検索が必要になるケースが整理されている
 * source status / freshness / evidenceを検索時にも維持する要件が整理されている
+* Retrieved ContextをContext Packへ接続するための初期要件が整理されている
 
 ---
 
@@ -704,7 +877,7 @@ docs/review/phase-2-context-forge-completion-review.md
 
 ---
 
-## 11. 作業順序
+## 13. 作業順序
 
 | Order | Milestone                    | Priority | Main Output                     | Dependency |
 | ----: | ---------------------------- | -------- | ------------------------------- | ---------- |
@@ -722,7 +895,7 @@ docs/review/phase-2-context-forge-completion-review.md
 
 ---
 
-## 12. 作業チケット案
+## 14. 作業チケット案
 
 | ID     | Task                         | Priority | Output                          | Completion Criteria             |
 | ------ | ---------------------------- | -------- | ------------------------------- | ------------------------------- |
@@ -746,40 +919,43 @@ docs/review/phase-2-context-forge-completion-review.md
 
 ---
 
-## 13. DoD: Definition of Done
+## 15. DoD: Definition of Done
 
 Phase 2は、以下を満たした時点で完了とする。
 
-| ID         | DoD                                                                            | Required |
-| ---------- | ------------------------------------------------------------------------------ | -------: |
-| P2-DOD-001 | Context Pack標準構造が定義されている                                                       |      yes |
-| P2-DOD-002 | Project Registryのschemaが定義されている                                                |      yes |
-| P2-DOD-003 | Project Registryに `mnemosyne` と `ats` が登録されている                                 |      yes |
-| P2-DOD-004 | Agent Registryのschemaが定義されている                                                  |      yes |
-| P2-DOD-005 | Agent Registryに初期検証用Agentが登録されている                                              |      yes |
-| P2-DOD-006 | Context Build Requestの入力形式が定義されている                                             |      yes |
-| P2-DOD-007 | CLIでContext Packを生成できる                                                         |      yes |
-| P2-DOD-008 | Build ReportにSource List、Excluded Sources、Missing Required Docs、Warningsを出力できる |      yes |
-| P2-DOD-009 | draft sourceとrecent contextをActive正本より優先しない                                    |      yes |
-| P2-DOD-010 | MnemosyneでContext Pack生成検証が完了している                                              |      yes |
-| P2-DOD-011 | ATSでContext Pack生成検証が完了している                                                    |      yes |
-| P2-DOD-012 | 固定読み込みで不足する情報がPhase3入力要件として整理されている                                             |      yes |
-| P2-DOD-013 | RAG / API / MCP / UIへ不要に着手していない                                                |      yes |
-| P2-DOD-014 | Phase3への移行判断が記録されている                                                           |      yes |
+| ID         | DoD                                                                                                                                         | Required |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------- | -------: |
+| P2-DOD-001 | Context Pack標準構造が定義されている                                                                                                                    |      yes |
+| P2-DOD-002 | Project Registryのschemaが定義されている                                                                                                             |      yes |
+| P2-DOD-003 | Project Registryに `mnemosyne` と `ats` が登録されている                                                                                              |      yes |
+| P2-DOD-004 | Agent Registryのschemaが定義されている                                                                                                               |      yes |
+| P2-DOD-005 | Agent Registryに初期検証用Agentが登録されている                                                                                                           |      yes |
+| P2-DOD-006 | Context Build Requestの入力形式が定義されている                                                                                                          |      yes |
+| P2-DOD-007 | CLIでContext Packを生成できる                                                                                                                      |      yes |
+| P2-DOD-008 | Build ReportにSource List、Excluded Sources、Missing Required Docs、Warningsを出力できる                                                              |      yes |
+| P2-DOD-009 | draft sourceとrecent contextをActive正本より優先しない                                                                                                 |      yes |
+| P2-DOD-010 | MnemosyneでContext Pack生成検証が完了している                                                                                                           |      yes |
+| P2-DOD-011 | ATSでContext Pack生成検証が完了している                                                                                                                 |      yes |
+| P2-DOD-012 | 固定読み込みで不足する情報がPhase3入力要件として整理されている                                                                                                          |      yes |
+| P2-DOD-013 | RAG / API / MCP / UIへ不要に着手していない                                                                                                             |      yes |
+| P2-DOD-014 | Phase3への移行判断が記録されている                                                                                                                        |      yes |
+| P2-DOD-015 | Phase 3へ引き渡す検索導入要件として、固定読み込みで不足した情報、追加検索が必要なsource種別、metadata要件、status / freshness / evidence維持方針が `phase-3-input-requirements.md` に整理されている |      yes |
+| P2-DOD-016 | Session Context / Recent Conversation Context / Conversation Summaryの扱いが `recent-context-policy.md` または関連文書で定義されている                         |      yes |
+| P2-DOD-017 | `required_memory_docs` が存在検証対象であり、常時全文投入対象ではないことがProject Registry定義に明記されている                                                                 |      yes |
 
 ---
 
-## 14. Phase 3への移行判断基準
+## 16. Phase 3への移行判断基準
 
-| 判定             | 条件                                                        |
-| -------------- | --------------------------------------------------------- |
-| Go             | Phase 2 DoDを満たし、Mnemosyne / ATSでContext Pack生成が実用可能である    |
-| Conditional Go | 一部P1改善をPhase3初期または並行対応に回せる状態で、P0不足がない                     |
-| No Go          | Registry、Context Builder、Context Pack構造、検証結果のいずれかにP0不足がある |
+| 判定             | 条件                                                                     |
+| -------------- | ---------------------------------------------------------------------- |
+| Go             | Phase 2 DoDを満たし、Mnemosyne / ATSでContext Pack生成が実用可能であり、Phase3入力要件が整理済み |
+| Conditional Go | 一部P1改善をPhase3初期または並行対応に回せる状態で、P0不足がない                                  |
+| No Go          | Registry、Context Builder、Context Pack構造、検証結果、Phase3入力要件のいずれかにP0不足がある   |
 
 ---
 
-## 15. 主なリスクと対策
+## 17. 主なリスクと対策
 
 | Risk                                | Description                     | Countermeasure                                                    |
 | ----------------------------------- | ------------------------------- | ----------------------------------------------------------------- |
@@ -791,36 +967,70 @@ Phase 2は、以下を満たした時点で完了とする。
 | Phase3へ進む前にRAGへ脱線する                 | Context Builderの検証前に検索機能へ進んでしまう | Phase2では明示登録文書のみ扱う                                                |
 | ATS固有の設計に寄りすぎる                      | Mnemosyne汎用基盤として再利用しづらくなる       | MnemosyneとATSの2系統で必ず検証する                                          |
 | CLI仕様が早期に固まりすぎる                     | 後続Phaseで変更しづらくなる                | Phase2では初期CLIとして扱い、API化はPhase4で再設計する                              |
+| Session Contextが正本と誤解される            | 一時的な作業文脈が確定情報として扱われる            | Session Contextは一時入力であり、Active正本ではないと明記する                         |
 
 ---
 
-## 16. Open Decisions
+## 18. Open Decisions
 
-| ID        | Decision Needed                              | Candidate Options                            | Timing      |
-| --------- | -------------------------------------------- | -------------------------------------------- | ----------- |
-| P2-OD-001 | Registry形式                                   | YAML / JSON / TypeScript config              | M2-2 / M2-3 |
-| P2-OD-002 | CLI実装方式                                      | npm script / standalone CLI / Node TS script | M2-5        |
-| P2-OD-003 | Context Pack出力先                              | `dist/context/` / `docs/generated/context/`  | M2-5        |
-| P2-OD-004 | token budget方式                               | fixed / agent別 / task別                       | M2-5 / M2-6 |
-| P2-OD-005 | source pattern解決方式                           | glob / explicit list / registry group        | M2-5        |
-| P2-OD-006 | Build Report保存要否                             | always / option / preview only               | M2-6        |
-| P2-OD-007 | `context-preview.md` と `context-pack.md` の差分 | 同一 / Preview拡張 / Report分離                    | M2-6        |
-| P2-OD-008 | `article_writer` をPhase2検証対象に含めるか            | Later維持 / P2へ昇格                              | M2-8後       |
+| ID        | Decision Needed                              | Candidate Options                                                                             | Timing      |
+| --------- | -------------------------------------------- | --------------------------------------------------------------------------------------------- | ----------- |
+| P2-OD-001 | Registry形式                                   | YAML / JSON / TypeScript config                                                               | M2-2 / M2-3 |
+| P2-OD-002 | CLI実装方式                                      | npm script / standalone CLI / Node TS script                                                  | M2-5        |
+| P2-OD-003 | Context Pack出力先                              | `dist/context/` / `docs/generated/context/`                                                   | M2-5        |
+| P2-OD-004 | token budget方式                               | fixed / agent別 / task別                                                                        | M2-5 / M2-6 |
+| P2-OD-005 | source pattern解決方式                           | glob / explicit list / registry group                                                         | M2-5        |
+| P2-OD-006 | Build Report保存要否                             | always / option / preview only                                                                | M2-6        |
+| P2-OD-007 | `context-preview.md` と `context-pack.md` の差分 | 同一 / Preview拡張 / Report分離                                                                     | M2-6        |
+| P2-OD-008 | `article_writer` をPhase2検証対象に含めるか            | Later維持 / P2へ昇格                                                                               | M2-8後       |
+| P2-OD-009 | 初期Agentセット                                   | `adr_writer` / `requirements_writer` の2件に絞るか、`implementation_reviewer` / `task_planner` も含めるか | M2-3        |
 
 ---
 
-## 17. 推奨する最初の着手単位
+## 19. MVPラインとFullライン
+
+Phase2は、MVPラインとFullラインを分けて進める。
+
+### 19.1 MVPライン
+
+MVPラインでは、Context Pack生成の成立を最優先する。
+
+| Item                                                       | Required |
+| ---------------------------------------------------------- | -------: |
+| `config/projects.yaml`                                     |      yes |
+| `config/agents.yaml`                                       |      yes |
+| `src/cli/context-build.ts`                                 |      yes |
+| `src/services/contextBuilderService.ts`                    |      yes |
+| `dist/context/{project_code}/{agent_code}/context-pack.md` |      yes |
+| `dist/context/{project_code}/{agent_code}/build-report.md` |      yes |
+
+### 19.2 Fullライン
+
+Fullラインでは、Preview、token estimate、coverage、詳細なsource resolver、検証テンプレートを整備する。
+
+| Item                     | Required for Phase2 Completion |
+| ------------------------ | -----------------------------: |
+| `context-preview.md`     |                    recommended |
+| token estimate           |                       optional |
+| coverage report          |                       optional |
+| detailed source resolver |                    recommended |
+| validation templates     |                    recommended |
+
+---
+
+## 20. 推奨する最初の着手単位
 
 Phase 2は、まず以下の単位で着手する。
 
 ```text
-M2-0：Phase 2方針確定
 M2-1：Context Pack標準構造定義
 M2-2：Project Registry定義
 M2-3：Agent Registry定義
 ```
 
-この4つを先に確定する理由は、Context Builderの実装前に、何を入力として受け取り、何を出力すべきかを固定する必要があるためである。
+M2-0は本書のActive化により完了扱いとする。
+
+この3つを先に確定する理由は、Context Builderの実装前に、何を入力として受け取り、何を出力すべきかを固定する必要があるためである。
 
 その後、以下の順に進める。
 
@@ -844,28 +1054,28 @@ Phase2完了レビュー
 
 ---
 
-## 18. 今回の推奨判断
+## 21. 今回の判断
 
-Phase 2では、まずCLI中心の最小構成で進める。
+M2-0：Phase 2方針確定は、以下の理由によりActive化する。
 
-初期MVPとしては、以下を作成できれば十分である。
+1. Phase2の目的が定義されている
+2. Phase2の対象範囲が定義されている
+3. Phase2の対象外が定義されている
+4. Phase2成果物が文書・設定・テンプレート・CLI・検証レポート・生成物に分けて整理されている
+5. M2-1以降の作業単位が定義されている
+6. Phase3へ渡す入力要件がDoD上で明示されている
+7. 成果物名とCLI配置名の揺れが整理されている
+8. `required_memory_docs` が存在検証対象として定義されている
+9. Session Context / Recent Conversation Context / Conversation Summaryの関係が明示されている
+10. RAG / API / MCP / UIへスコープ逸脱していない
 
-```text
-config/projects.yaml
-config/agents.yaml
-src/cli/context-build.ts
-dist/context/{project_code}/{agent_code}/context-pack.md
-dist/context/{project_code}/{agent_code}/build-report.md
-```
-
-Phase 2の価値は、高度な検索や自動化ではなく、AIへ渡すContextを、手作業ではなく再現可能なルールで生成できるようにする点にある。
-
-そのため、RAG、API、MCP、UI、自動更新には進まず、まずは `Project × Agent × Task` によるContext Pack生成を確実に成立させる。
+したがって、Phase2は次工程である **M2-1：Context Pack標準構造定義** へ進める。
 
 ---
 
-## 19. Change History
+## 22. Change History
 
-| Version | Date       | Status | Change                                              | Author   |
-| ------- | ---------- | ------ | --------------------------------------------------- | -------- |
-| 0.1.0   | 2026-06-08 | draft  | Phase 2 Input Requirementsを参照し、Phase 2作業計画書ドラフトを作成。 | AI draft |
+| Version | Date       | Status | Change                                                                                                                                                                        | Author   |
+| ------- | ---------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| 0.1.0   | 2026-06-08 | draft  | Phase 2 Input Requirementsを参照し、Phase 2作業計画書ドラフトを作成。                                                                                                                           | AI draft |
+| 1.0.0   | 2026-06-08 | active | M2-0 Active化レビューのP1修正を反映。Phase3入力要件のDoD明示、成果物名・CLI配置名の統一、`required_memory_docs` の存在検証対象化、Session Context / Recent Context / Conversation Summaryの関係明示、M2-0 Active化チェックリストを追加。 | AI draft |
