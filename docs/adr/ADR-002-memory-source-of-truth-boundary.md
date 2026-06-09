@@ -1,22 +1,22 @@
 ---
 title: "ADR-002: Memory Source of Truth Boundary"
-document_id: "docs/adr/ADR-002-memory-source-of-truth-boundary.md"
-adr_id: "ADR-002"
-status: "active"
-version: "1.0.0"
-created_at: "2026-06-04"
-updated_at: "2026-06-04"
-approved_at: "2026-06-04"
+document_id: docs/adr/ADR-002-memory-source-of-truth-boundary.md
+adr_id: ADR-002
+status: active
+version: 1.0.0
+created_at: 2026-06-04
+updated_at: 2026-06-04
+approved_at: 2026-06-04
 phase: "Phase 1: Memory Foundation"
 milestone: "M1-1: Memory Policy定義"
-decision_scope: "Boundary Between Sources, Replicas, Primary Notes, Generated Artifacts, and Interfaces"
+decision_scope: Boundary Between Sources, Replicas, Primary Notes, Generated Artifacts, and Interfaces
 related_documents:
-  - "docs/phases/phase-1-memory-foundation.md"
-  - "docs/memory/memory-policy.md"
-  - "docs/adr/ADR-001-docs-as-source-of-memory.md"
-  - "docs/adr/ADR-003-human-approved-memory-update.md"
-supersedes: null
-superseded_by: null
+  - docs/phases/phase-1-memory-foundation.md
+  - docs/memory/memory-policy.md
+  - docs/adr/ADR-001-docs-as-source-of-memory.md
+  - docs/adr/ADR-003-human-approved-memory-update.md
+supersedes:
+superseded_by:
 ---
 
 # ADR-002: Memory Source of Truth Boundary

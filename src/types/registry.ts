@@ -216,3 +216,174 @@ export interface ProjectSourceCandidates {
   adr_sources: SourceCandidate[];
   review_sources: SourceCandidate[];
 }
+export type AgentCode = string;
+
+export type AgentStatus = "draft" | "active" | "archived";
+
+export type AgentContextInclusion = "required" | "optional";
+
+export type AgentContextSourceType = SourceGroupType | "recent_context" | "session_context";
+
+export type AgentOutputFormat = "markdown" | "markdown_and_files" | "json";
+
+export type OutputContractId =
+  | "review_report"
+  | "draft_documents"
+  | "implementation_plan"
+  | "article_draft";
+
+export interface AgentRegistryFile {
+  registry_schema_version: string;
+  registry_status: AgentStatus;
+  updated_at: string;
+  description?: string;
+  agent_selection_policy?: AgentSelectionPolicy;
+  defaults?: AgentRegistryDefaults;
+  agents: AgentRegistryEntry[];
+}
+
+export interface AgentSelectionPolicy {
+  agent_registry_is_source_of_agent_contract: boolean;
+  project_registry_is_source_of_project_sources: boolean;
+  context_pack_is_generated_artifact: boolean;
+  context_inclusion_is_decided_by: string[];
+}
+
+export interface AgentRegistryDefaults {
+  output_contracts?: Partial<Record<OutputContractId, OutputContractConfig>>;
+  write_policies?: Partial<Record<WritePolicyId, WritePolicyConfig>>;
+}
+
+export interface AgentRegistryEntry {
+  agent_code: AgentCode;
+  agent_name: string;
+  description?: string;
+  status?: AgentStatus;
+  version?: string;
+
+  /**
+   * Project codes this agent can be combined with.
+   * Use ["*"] only for project-independent agents.
+   */
+  supported_project_codes: ProjectCode[];
+
+  default_output_contract: OutputContractReference | OutputContractConfig;
+  write_policy: PolicyReference<WritePolicyId> | WritePolicyConfig;
+
+  role: string;
+  responsibilities: string[];
+  out_of_scope: string[];
+
+  /**
+   * Context required by the agent contract.
+   * Actual source expansion is performed by Context Builder using Project Registry.
+   */
+  required_context: AgentContextRequirement[];
+
+  /**
+   * Context candidates that may be included depending on task, token budget, and build rule.
+   */
+  optional_context?: AgentContextRequirement[];
+
+  allowed_operations: string[];
+  forbidden_operations: string[];
+
+  output_contract: OutputContractReference | AgentOutputContractOverride;
+}
+
+export interface AgentContextRequirement {
+  context_id: string;
+  source_type: AgentContextSourceType;
+
+  /**
+   * Project Registry source_group reference.
+   * Example: mnemosyne_context_docs, ats_domain_docs.
+   */
+  source_group?: string;
+
+  /**
+   * Memory document file names under project memory_root.
+   */
+  document_names?: string[];
+
+  /**
+   * Direct relative paths. Use sparingly; source_group is preferred.
+   */
+  paths?: string[];
+
+  purpose: string;
+  inclusion: AgentContextInclusion;
+  max_items?: number;
+  handling_note?: string;
+}
+
+export interface OutputContractReference {
+  output_contract_id: OutputContractId;
+}
+
+export interface OutputContractConfig {
+  output_contract_id: OutputContractId;
+  description?: string;
+  required_sections: string[];
+  default_format: AgentOutputFormat;
+}
+
+export interface AgentOutputContractOverride {
+  output_contract_id: OutputContractId;
+  additional_requirements?: string[];
+}
+
+export interface ResolvedAgentRegistry {
+  agent: AgentRegistryEntry;
+  default_output_contract: OutputContractConfig;
+  output_contract: ResolvedAgentOutputContract;
+  write_policy: WritePolicyConfig;
+}
+
+export interface ResolvedAgentOutputContract extends OutputContractConfig {
+  additional_requirements: string[];
+}
+
+export interface AgentRegistryValidationResult {
+  ok: boolean;
+  agent_code?: AgentCode;
+  errors: AgentRegistryValidationError[];
+  warnings: AgentRegistryValidationWarning[];
+}
+
+export interface AgentRegistryValidationError {
+  code:
+    | "agent_registry_file_invalid"
+    | "agent_not_found"
+    | "missing_required_field"
+    | "duplicate_agent_code"
+    | "invalid_supported_project_code"
+    | "invalid_output_contract"
+    | "invalid_write_policy"
+    | "invalid_context_requirement"
+    | "invalid_context_path";
+
+  message: string;
+  agent_code?: AgentCode;
+  context_id?: string;
+  path?: string;
+}
+
+export interface AgentRegistryValidationWarning {
+  code:
+    | "agent_status_not_active"
+    | "optional_context_empty"
+    | "context_source_group_unresolved"
+    | "output_contract_has_no_additional_requirements"
+    | "agent_all_projects_scope";
+
+  message: string;
+  agent_code?: AgentCode;
+  context_id?: string;
+}
+
+export interface AgentContextCandidates {
+  agent_code: AgentCode;
+  required_context: AgentContextRequirement[];
+  optional_context: AgentContextRequirement[];
+}
