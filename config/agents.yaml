@@ -1,5 +1,5 @@
-registry_schema_version: "0.2.0"
-registry_status: "draft"
+registry_schema_version: "1.0.0"
+registry_status: "active"
 updated_at: "2026-06-09"
 
 description: >
@@ -136,8 +136,8 @@ agents:
     description: "設計判断をADR形式へ整理し、背景・決定・影響・代替案を明確化するProject非依存Agent"
     priority: "P0"
     agent_scope: "project_independent"
-    status: "draft"
-    version: "0.2.0"
+    status: "active"
+    version: "1.0.0"
     supported_project_codes:
       - "*"
     default_output_contract:
@@ -222,8 +222,8 @@ agents:
     description: "目的、範囲、成果物、完了条件を要件定義文書として整理するProject非依存Agent"
     priority: "P0"
     agent_scope: "project_independent"
-    status: "draft"
-    version: "0.2.0"
+    status: "active"
+    version: "1.0.0"
     supported_project_codes:
       - "*"
     default_output_contract:
@@ -313,8 +313,8 @@ agents:
     description: "実装、設計文書、契約、テスト結果の整合を確認するProject非依存Agent"
     priority: "P1"
     agent_scope: "project_independent"
-    status: "draft"
-    version: "0.2.0"
+    status: "active"
+    version: "1.0.0"
     supported_project_codes:
       - "*"
     default_output_contract:
@@ -403,8 +403,8 @@ agents:
     description: "目的やMilestoneを実行可能なTask、依存関係、完了条件へ分解するProject非依存Agent"
     priority: "P1"
     agent_scope: "project_independent"
-    status: "draft"
-    version: "0.2.0"
+    status: "active"
+    version: "1.0.0"
     supported_project_codes:
       - "*"
     default_output_contract:
@@ -494,8 +494,8 @@ agents:
     description: "開発記録や設計メモを記事化・発信用ドラフトへ変換するProject非依存Agent"
     priority: "Later"
     agent_scope: "project_independent"
-    status: "draft"
-    version: "0.2.0"
+    status: "active"
+    version: "1.0.0"
     supported_project_codes:
       - "*"
     default_output_contract:
