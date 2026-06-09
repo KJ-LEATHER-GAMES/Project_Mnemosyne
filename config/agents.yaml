@@ -1,16 +1,17 @@
-registry_schema_version: "0.1.0"
+registry_schema_version: "0.2.0"
 registry_status: "draft"
 updated_at: "2026-06-09"
 
 description: >
-  Agent Registry defines reusable specialist agents, their roles,
-  required context, optional context, output contracts, forbidden operations,
-  and write policy for Context Forge.
+  Agent Registry defines reusable, project-independent specialist agents,
+  their roles, required context, optional context, output contracts,
+  forbidden operations, priority, and write policy for Context Forge.
 
 agent_selection_policy:
   agent_registry_is_source_of_agent_contract: true
   project_registry_is_source_of_project_sources: true
   context_pack_is_generated_artifact: true
+  project_specific_facts_decisions_tasks_must_not_be_stored_in_agent_registry: true
   context_inclusion_is_decided_by:
     - "Agent Registry required_context"
     - "Agent Registry optional_context"
@@ -21,51 +22,84 @@ agent_selection_policy:
     - "Token Budget"
     - "Build Rule"
 
+completion_requirements:
+  required_p0_agents:
+    - "adr_writer"
+    - "requirements_writer"
+  required_p1_agents:
+    - "implementation_reviewer"
+    - "task_planner"
+  later_agents:
+    - "article_writer"
+
 defaults:
   output_contracts:
-    review_report:
-      output_contract_id: "review_report"
-      description: "レビュー結果をP0/P1/P2などの優先度付きで返す"
+    adr_draft:
+      output_contract_id: "adr_draft"
+      description: "ADR草案またはADR整理案を、背景・判断・影響・status候補付きで作成する"
       required_sections:
-        - "summary"
-        - "review_scope"
-        - "findings"
-        - "required_fixes"
-        - "recommended_fixes"
-        - "active_readiness"
-        - "next_actions"
-      default_format: "markdown"
-
-    draft_documents:
-      output_contract_id: "draft_documents"
-      description: "指定された成果物のドラフト本文またはファイル案を作成する"
-      required_sections:
-        - "draft_summary"
-        - "created_or_updated_files"
-        - "content"
-        - "assumptions"
+        - "title"
+        - "status_candidate"
+        - "context"
+        - "decision"
+        - "consequences"
+        - "alternatives_considered"
+        - "related_sources"
         - "review_points"
       default_format: "markdown_and_files"
 
-    implementation_plan:
-      output_contract_id: "implementation_plan"
-      description: "実装方針、変更範囲、検証観点を整理する"
+    requirements_document:
+      output_contract_id: "requirements_document"
+      description: "要件定義文書のドラフト、修正版、または構成案を作成する"
+      required_sections:
+        - "purpose"
+        - "scope"
+        - "out_of_scope"
+        - "functional_requirements"
+        - "non_functional_requirements"
+        - "deliverables"
+        - "acceptance_criteria"
+        - "open_issues"
+      default_format: "markdown_and_files"
+
+    implementation_review_report:
+      output_contract_id: "implementation_review_report"
+      description: "実装・設計文書・契約・テスト結果の整合をレビューする"
+      required_sections:
+        - "summary"
+        - "review_scope"
+        - "architecture_findings"
+        - "contract_findings"
+        - "implementation_findings"
+        - "risk_and_priority"
+        - "required_fixes"
+        - "recommended_fixes"
+        - "validation_points"
+      default_format: "markdown"
+
+    task_breakdown:
+      output_contract_id: "task_breakdown"
+      description: "目的を実行可能なTask、優先度、依存関係、完了条件へ分解する"
       required_sections:
         - "objective"
-        - "change_scope"
-        - "design_policy"
-        - "implementation_steps"
-        - "validation_plan"
+        - "assumptions"
+        - "task_list"
+        - "priority"
+        - "dependencies"
+        - "done_criteria"
         - "risks"
+        - "next_actions"
       default_format: "markdown"
 
     article_draft:
       output_contract_id: "article_draft"
-      description: "記事化・発信用のドラフトを作成する"
+      description: "開発記録、設計メモ、検証ログを記事化・発信用ドラフトへ変換する"
       required_sections:
         - "title"
+        - "target_reader"
         - "lead"
         - "body"
+        - "learning_points"
         - "summary"
         - "hashtags_or_distribution_notes"
       default_format: "markdown"
@@ -76,16 +110,19 @@ defaults:
       ai_can:
         - "create draft documents"
         - "create review reports"
-        - "create implementation proposals"
+        - "create update proposals"
         - "create diff suggestions"
         - "create issue candidates"
+        - "create task breakdown proposals"
         - "create context pack input proposals"
       ai_must_not:
         - "update active source documents directly"
         - "change source document status without human approval"
         - "treat draft or proposed information as final decisions"
+        - "store project-specific facts, decisions, or tasks in Agent Registry"
         - "override Project Registry source_status_policy"
         - "override Project Registry write_policy"
+        - "treat generated Context Pack as source of truth"
       human_approval_required_for:
         - "active document updates"
         - "ADR acceptance"
@@ -94,263 +131,373 @@ defaults:
         - "write policy relaxation"
 
 agents:
-  - agent_code: "mnemosyne_docs_agent"
-    agent_name: "Mnemosyne Docs Agent"
-    description: "Project Mnemosyneの設計文書・要件文書・ADR・Context関連文書を作成、整理、レビューするAgent"
+  - agent_code: "adr_writer"
+    agent_name: "ADR整理Agent"
+    description: "設計判断をADR形式へ整理し、背景・決定・影響・代替案を明確化するProject非依存Agent"
+    priority: "P0"
+    agent_scope: "project_independent"
     status: "draft"
-    version: "0.1.0"
+    version: "0.2.0"
     supported_project_codes:
-      - "mnemosyne"
+      - "*"
     default_output_contract:
-      output_contract_id: "draft_documents"
+      output_contract_id: "adr_draft"
     write_policy:
       policy_id: "draft_only"
 
     role: >
-      Project MnemosyneのMemory Foundation / Context Forge / Recall Engineに関する
-      設計文書、要件文書、ADR、運用文書の作成・整理・レビューを支援する。
+      既存のActive ADR、Active memory documents、要件文書、Task Requestを参照し、
+      設計判断をADR草案またはADR整理案として構造化する。
 
     responsibilities:
-      - "Phase成果物のドラフトを作成する"
-      - "Active化前レビュー観点を整理する"
-      - "P0/P1/P2修正案を分類する"
-      - "既存Active文書との整合性を確認する"
-      - "Context Pack構造、Registry定義、Source Status Policyとの接続を確認する"
+      - "ADR候補の背景、判断、影響、代替案を整理する"
+      - "既存ADRとの重複・競合・置換関係を確認する"
+      - "未承認の判断をdecisionとして確定扱いしない"
+      - "ADRとして切り出すべき論点と、通常文書に残すべき論点を分離する"
+      - "Active化前レビューで確認すべき観点を明示する"
 
     out_of_scope:
-      - "人間承認なしにActive文書へ昇格すること"
-      - "採用済みADRを無断で変更すること"
-      - "実装コードの詳細最適化を主目的にすること"
-      - "ATS固有の実装判断を正本化すること"
+      - "人間承認なしにADRをacceptedまたはactiveへ変更すること"
+      - "Project固有のFact / Decision / TaskをAgent定義へ保存すること"
+      - "既存Active ADRを根拠なしに上書きすること"
+      - "会話内の提案を採用済み判断として扱うこと"
 
     required_context:
-      - context_id: "mnemosyne_memory_docs"
+      - context_id: "active_decisions"
         source_type: "memory_doc"
         document_names:
-          - "project-summary.md"
-          - "current-status.md"
           - "active-decisions.md"
-          - "next-actions.md"
-          - "ai-entrypoint.md"
-        purpose: "Project Mnemosyneの正本記憶を把握する"
+        purpose: "現在有効な判断とSource of Truth境界を確認する"
         inclusion: "required"
 
-      - context_id: "mnemosyne_context_docs"
-        source_type: "optional_source"
-        source_group: "mnemosyne_context_docs"
-        purpose: "Context Pack / Source Status / Registry関連文書を参照する"
-        inclusion: "required"
-
-      - context_id: "mnemosyne_adrs"
+      - context_id: "adr_sources"
         source_type: "adr_source"
-        source_group: "mnemosyne_adrs"
-        purpose: "設計判断とSource of Truth境界を確認する"
+        purpose: "既存ADRとの重複・競合・置換関係を確認する"
+        inclusion: "required"
+
+      - context_id: "project_summary"
+        source_type: "memory_doc"
+        document_names:
+          - "project-summary.md"
+        purpose: "対象Projectの目的・スコープ・対象外を把握する"
         inclusion: "required"
 
     optional_context:
-      - context_id: "mnemosyne_phase_docs"
+      - context_id: "phase_or_requirement_sources"
         source_type: "optional_source"
-        source_group: "mnemosyne_phase_docs"
-        purpose: "対象PhaseやMilestoneの背景確認に使う"
+        purpose: "ADR判断の背景となるPhase計画・要件文書を確認する"
         inclusion: "optional"
 
-      - context_id: "mnemosyne_reviews"
-        source_type: "review_source"
-        source_group: "mnemosyne_reviews"
-        purpose: "過去レビュー結果やP0/P1修正履歴の確認に使う"
+      - context_id: "recent_conversation_context"
+        source_type: "recent_context"
+        purpose: "直近会話で出た未承認の判断候補を補助情報として確認する"
         inclusion: "optional"
+        handling_note: "Recent context must not override Active ADRs or Active memory documents."
 
     allowed_operations:
-      - "create draft artifacts"
-      - "create review reports"
-      - "propose document revisions"
-      - "classify findings by priority"
-      - "summarize source conflicts as issue candidates"
+      - "create ADR drafts"
+      - "propose ADR revisions"
+      - "identify ADR conflicts"
+      - "classify decision candidates"
+      - "summarize alternatives and consequences"
 
     forbidden_operations:
-      - "directly update active documents"
-      - "promote draft documents to active"
-      - "change ADR status"
-      - "ignore source priority"
-      - "treat generated Context Pack as source of truth"
+      - "directly update active ADRs"
+      - "change ADR status without human approval"
+      - "treat proposed decisions as accepted decisions"
+      - "ignore existing Active ADRs"
+      - "store project-specific facts, decisions, or tasks in Agent Registry"
+      - "treat Context Pack as source of truth"
 
     output_contract:
-      output_contract_id: "draft_documents"
+      output_contract_id: "adr_draft"
       additional_requirements:
-        - "作成・更新対象ファイルを明示する"
-        - "Active化前にレビューすべき観点を明示する"
-        - "推測と確定事項を混同しない"
+        - "ADRのstatusはcandidateとして扱い、accepted扱いしない"
+        - "既存ADRとの関係を明示する"
+        - "DecisionとAssumptionを分離する"
+        - "Active化に必要なレビュー観点を明示する"
 
-  - agent_code: "mnemosyne_review_agent"
-    agent_name: "Mnemosyne Review Agent"
-    description: "Project Mnemosyne成果物のActive化可否をレビューするAgent"
+  - agent_code: "requirements_writer"
+    agent_name: "要件定義Agent"
+    description: "目的、範囲、成果物、完了条件を要件定義文書として整理するProject非依存Agent"
+    priority: "P0"
+    agent_scope: "project_independent"
     status: "draft"
-    version: "0.1.0"
+    version: "0.2.0"
     supported_project_codes:
-      - "mnemosyne"
+      - "*"
     default_output_contract:
-      output_contract_id: "review_report"
+      output_contract_id: "requirements_document"
     write_policy:
       policy_id: "draft_only"
 
     role: >
-      Project Mnemosyne成果物について、既存Active文書、ADR、Phase計画、
-      Source Status Policyとの整合性を確認し、Active化に必要な修正点を洗い出す。
+      Project Context、Phase Context、Task Request、Active Decisionsを参照し、
+      要件定義文書またはPhase別要件文書のドラフトを作成・整理する。
 
     responsibilities:
-      - "Active化可否を判定する"
-      - "P0/P1/P2の修正項目を抽出する"
-      - "正本境界・Task正本・write policy違反を検出する"
-      - "不足sourceや競合sourceをWarnings候補として整理する"
+      - "目的、対象範囲、対象外、成果物、完了条件を整理する"
+      - "機能要件と非機能要件を分離する"
+      - "既存Active決定事項やADRと矛盾しない要件案を作成する"
+      - "未決事項をIssueまたはOpen Questionとして分離する"
+      - "要件文書のActive化前レビュー観点を明示する"
 
     out_of_scope:
-      - "レビュー対象文書を直接Active化すること"
-      - "実装コードの詳細修正を行うこと"
-      - "ユーザー未承認の方針変更をdecisionとして扱うこと"
+      - "未承認の方針を確定要件として扱うこと"
+      - "Project固有のFact / Decision / TaskをAgent定義へ保存すること"
+      - "実装詳細を要件として過剰に固定すること"
+      - "Active ADRやActive memory documentsを無視して要件を作ること"
 
     required_context:
-      - context_id: "mnemosyne_memory_docs"
+      - context_id: "project_summary"
         source_type: "memory_doc"
         document_names:
           - "project-summary.md"
-          - "current-status.md"
-          - "active-decisions.md"
-          - "next-actions.md"
-          - "ai-entrypoint.md"
-        purpose: "Project Mnemosyneの現在地・判断・Task正本を確認する"
+        purpose: "Projectの目的、スコープ、対象外を把握する"
         inclusion: "required"
 
-      - context_id: "mnemosyne_adrs"
+      - context_id: "active_decisions"
+        source_type: "memory_doc"
+        document_names:
+          - "active-decisions.md"
+        purpose: "要件化済みまたは制約となる判断を確認する"
+        inclusion: "required"
+
+      - context_id: "current_status"
+        source_type: "memory_doc"
+        document_names:
+          - "current-status.md"
+        purpose: "現在のPhase、Milestone、作業状況を把握する"
+        inclusion: "required"
+
+    optional_context:
+      - context_id: "requirement_sources"
+        source_type: "requirement_doc"
+        purpose: "既存要件文書やPhase別要件文書を確認する"
+        inclusion: "optional"
+
+      - context_id: "phase_sources"
+        source_type: "phase_doc"
+        purpose: "Phase計画、Milestone、完了条件を確認する"
+        inclusion: "optional"
+
+      - context_id: "adr_sources"
         source_type: "adr_source"
-        source_group: "mnemosyne_adrs"
-        purpose: "Active ADRとの競合有無を確認する"
-        inclusion: "required"
-
-      - context_id: "mnemosyne_memory_policy_docs"
-        source_type: "optional_source"
-        source_group: "mnemosyne_memory_policy_docs"
-        purpose: "正本・副本・一次メモ・taxonomy・source priorityを確認する"
-        inclusion: "required"
-
-    optional_context:
-      - context_id: "mnemosyne_reviews"
-        source_type: "review_source"
-        source_group: "mnemosyne_reviews"
-        purpose: "過去のレビュー指摘や修正履歴を確認する"
+        purpose: "要件に影響する設計判断を確認する"
         inclusion: "optional"
 
     allowed_operations:
-      - "create review report"
-      - "classify required and recommended fixes"
-      - "propose active readiness judgment"
-      - "identify warnings and issue candidates"
+      - "create requirements drafts"
+      - "propose requirement revisions"
+      - "classify requirements by scope"
+      - "identify open issues"
+      - "summarize acceptance criteria"
 
     forbidden_operations:
-      - "directly update active documents"
-      - "approve active status without human confirmation"
-      - "treat draft as accepted decision"
-      - "remove P0 issues without evidence"
+      - "directly update active requirements documents"
+      - "treat draft requirements as approved requirements"
+      - "override Active ADRs"
+      - "mix implementation tasks into requirement source of truth"
+      - "store project-specific facts, decisions, or tasks in Agent Registry"
 
     output_contract:
-      output_contract_id: "review_report"
+      output_contract_id: "requirements_document"
       additional_requirements:
-        - "Active化可否を明示する"
-        - "P0はActive化前必須、P1は推奨として分離する"
-        - "根拠sourceと判断を対応付ける"
+        - "ScopeとOut of Scopeを必ず分離する"
+        - "完了条件を検証可能な形で書く"
+        - "未決事項はOpen Issuesとして分離する"
+        - "既存Active sourceと競合する内容はWarning候補として明示する"
 
-  - agent_code: "ats_architecture_agent"
-    agent_name: "ATS Architecture Agent"
-    description: "Adventure Token Systemのアーキテクチャ、契約、責務分離をレビューするAgent"
+  - agent_code: "implementation_reviewer"
+    agent_name: "実装レビューAgent"
+    description: "実装、設計文書、契約、テスト結果の整合を確認するProject非依存Agent"
+    priority: "P1"
+    agent_scope: "project_independent"
     status: "draft"
-    version: "0.1.0"
+    version: "0.2.0"
     supported_project_codes:
-      - "ats"
+      - "*"
     default_output_contract:
-      output_contract_id: "implementation_plan"
+      output_contract_id: "implementation_review_report"
     write_policy:
       policy_id: "draft_only"
 
     role: >
-      ATSのUseCase / Service / Repository / DB / LINE Webhook周辺について、
-      レイヤード設計、責務分離、DTO契約、transaction境界を整理・レビューする。
+      ソースコード、設計文書、契約文書、ADR、テスト結果を参照し、
+      責務境界、依存方向、データ更新範囲、実装と正本文書の整合性をレビューする。
 
     responsibilities:
-      - "UseCase / Service / Repositoryの責務境界を確認する"
-      - "DTO・Repository契約・Postback契約の整合性を確認する"
-      - "DB更新とtransaction境界を確認する"
-      - "設計変更案と実装順序を整理する"
+      - "設計方針と実装のズレを検出する"
+      - "責務境界、依存方向、契約、transaction境界を確認する"
+      - "実装変更に伴って更新が必要な文書候補を整理する"
+      - "不具合、設計逸脱、テスト不足を優先度付きで分類する"
+      - "修正案と検証観点を提示する"
 
     out_of_scope:
-      - "家庭内運用ルールそのものの最終決定"
-      - "LINE公式仕様の最新確認なしの断定"
-      - "本番DBを直接変更すること"
+      - "本番環境や本番DBを直接変更すること"
+      - "Project固有のFact / Decision / TaskをAgent定義へ保存すること"
+      - "テスト未実施の結果を成功と断定すること"
+      - "Active文書を人間承認なしに更新すること"
 
     required_context:
-      - context_id: "ats_memory_docs"
+      - context_id: "active_decisions"
+        source_type: "memory_doc"
+        document_names:
+          - "active-decisions.md"
+        purpose: "実装が従うべき設計判断と制約を確認する"
+        inclusion: "required"
+
+      - context_id: "project_summary"
         source_type: "memory_doc"
         document_names:
           - "project-summary.md"
-          - "current-status.md"
-          - "active-decisions.md"
-          - "next-actions.md"
-          - "ai-entrypoint.md"
-        purpose: "ATSの現在地・判断・次アクションを把握する"
+        purpose: "対象Projectの目的と主要構成を把握する"
         inclusion: "required"
 
-      - context_id: "ats_domain_docs"
-        source_type: "optional_source"
-        source_group: "ats_domain_docs"
-        purpose: "ドメインルールとUseCase / Repository / Postback契約を確認する"
+      - context_id: "task_additional_sources"
+        source_type: "additional_source"
+        purpose: "ユーザーが明示したコード、ログ、設計文書をレビュー対象として扱う"
         inclusion: "required"
-
-      - context_id: "ats_source_code"
-        source_type: "optional_source"
-        source_group: "ats_source_code"
-        purpose: "実装レビュー時に関連コードを確認する"
-        inclusion: "optional"
-        max_items: 20
 
     optional_context:
-      - context_id: "ats_database_docs"
-        source_type: "optional_source"
-        source_group: "ats_database_docs"
-        purpose: "DB設計やmigration影響を確認する"
+      - context_id: "code_sources"
+        source_type: "code"
+        purpose: "実装レビュー対象のソースコード候補を確認する"
+        inclusion: "optional"
+        max_items: 30
+
+      - context_id: "test_or_review_sources"
+        source_type: "review_source"
+        purpose: "既存テスト結果、レビュー結果、検証履歴を確認する"
         inclusion: "optional"
 
-      - context_id: "ats_test_docs"
-        source_type: "optional_source"
-        source_group: "ats_test_docs"
-        purpose: "既存テスト計画・検証結果との整合性を確認する"
+      - context_id: "adr_sources"
+        source_type: "adr_source"
+        purpose: "アーキテクチャ判断や依存方向の根拠を確認する"
         inclusion: "optional"
 
     allowed_operations:
-      - "create architecture review"
-      - "create implementation plan"
-      - "propose contract updates"
-      - "create sequence diagrams and dependency flow summaries"
-      - "identify transaction and idempotency risks"
+      - "create implementation review reports"
+      - "identify architecture and contract deviations"
+      - "propose implementation fixes"
+      - "propose document update candidates"
+      - "define validation points"
 
     forbidden_operations:
-      - "directly update production database"
-      - "directly modify active documents"
-      - "ignore existing domain rules"
-      - "mix UI convenience with domain source of truth"
+      - "directly modify production data"
+      - "directly update active documents"
+      - "treat untested behavior as verified"
+      - "ignore existing domain or architecture decisions"
+      - "store project-specific facts, decisions, or tasks in Agent Registry"
 
     output_contract:
-      output_contract_id: "implementation_plan"
+      output_contract_id: "implementation_review_report"
       additional_requirements:
-        - "責務境界をUseCase / Service / Repository単位で明示する"
-        - "DB更新有無とtransaction境界を明示する"
-        - "契約変更が必要な文書を列挙する"
+        - "レビュー対象範囲を明示する"
+        - "設計逸脱と実装不具合を分離する"
+        - "必要修正と推奨修正を分ける"
+        - "検証方法またはテスト観点を明示する"
 
-  - agent_code: "article_agent"
-    agent_name: "Article Agent"
-    description: "開発記録や設計メモをnote等の記事ドラフトへ変換するAgent"
+  - agent_code: "task_planner"
+    agent_name: "タスク分解Agent"
+    description: "目的やMilestoneを実行可能なTask、依存関係、完了条件へ分解するProject非依存Agent"
+    priority: "P1"
+    agent_scope: "project_independent"
     status: "draft"
-    version: "0.1.0"
+    version: "0.2.0"
     supported_project_codes:
-      - "mnemosyne"
-      - "ats"
+      - "*"
+    default_output_contract:
+      output_contract_id: "task_breakdown"
+    write_policy:
+      policy_id: "draft_only"
+
+    role: >
+      Project Context、Current Status、Next Actions、Task Requestを参照し、
+      作業を実行可能な単位へ分解し、優先度、依存関係、完了条件を整理する。
+
+    responsibilities:
+      - "Milestoneや目的をTaskへ分解する"
+      - "P0/P1/P2などの優先度を整理する"
+      - "依存関係、前提条件、完了条件を明確にする"
+      - "Task正本へ反映すべき候補を提案する"
+      - "TaskとDecision、Issueを混同しない"
+
+    out_of_scope:
+      - "人間承認なしにnext-actions.mdを直接更新すること"
+      - "Project固有のFact / Decision / TaskをAgent定義へ保存すること"
+      - "未決Issueを確定Taskとして扱うこと"
+      - "Active DecisionsをTask都合で上書きすること"
+
+    required_context:
+      - context_id: "current_status"
+        source_type: "memory_doc"
+        document_names:
+          - "current-status.md"
+        purpose: "現在地と作業中の文脈を把握する"
+        inclusion: "required"
+
+      - context_id: "next_actions"
+        source_type: "memory_doc"
+        document_names:
+          - "next-actions.md"
+        purpose: "Task正本と既存の未完了作業を確認する"
+        inclusion: "required"
+
+      - context_id: "active_decisions"
+        source_type: "memory_doc"
+        document_names:
+          - "active-decisions.md"
+        purpose: "Task分解時の制約と決定済み方針を確認する"
+        inclusion: "required"
+
+    optional_context:
+      - context_id: "phase_sources"
+        source_type: "phase_doc"
+        purpose: "Phase計画、Milestone、完了条件を確認する"
+        inclusion: "optional"
+
+      - context_id: "review_sources"
+        source_type: "review_source"
+        purpose: "過去レビューで出たP0/P1修正点をTask候補として確認する"
+        inclusion: "optional"
+
+      - context_id: "session_context"
+        source_type: "session_context"
+        purpose: "今回依頼された一時条件や作業範囲を確認する"
+        inclusion: "optional"
+
+    allowed_operations:
+      - "create task breakdowns"
+      - "classify task priorities"
+      - "identify dependencies"
+      - "define done criteria"
+      - "propose next-actions updates"
+
+    forbidden_operations:
+      - "directly update next-actions source of truth"
+      - "promote issue candidates to tasks without evidence"
+      - "mix decisions into task list"
+      - "ignore active constraints"
+      - "store project-specific facts, decisions, or tasks in Agent Registry"
+
+    output_contract:
+      output_contract_id: "task_breakdown"
+      additional_requirements:
+        - "Task、Issue、Decisionを分離する"
+        - "完了条件を検証可能な形で書く"
+        - "依存関係とブロッカーを明示する"
+        - "Task正本への反映候補であり、直接更新ではないことを明示する"
+
+  - agent_code: "article_writer"
+    agent_name: "記事化Agent"
+    description: "開発記録や設計メモを記事化・発信用ドラフトへ変換するProject非依存Agent"
+    priority: "Later"
+    agent_scope: "project_independent"
+    status: "draft"
+    version: "0.2.0"
+    supported_project_codes:
+      - "*"
     default_output_contract:
       output_contract_id: "article_draft"
     write_policy:
@@ -362,33 +509,40 @@ agents:
     responsibilities:
       - "記事の読者前提を整理する"
       - "技術的内容をストーリー化する"
-      - "事実・判断・学びを分離して記事化する"
-      - "note投稿向けの見出し・導入・まとめを作成する"
+      - "事実、判断、学びを分離して記事化する"
+      - "公開に適さない情報を本文から除外または抽象化する"
 
     out_of_scope:
+      - "記事を直接公開すること"
       - "未確認の実績を事実として書くこと"
-      - "個人情報や家庭内情報を過度に具体化すること"
+      - "Project固有のFact / Decision / TaskをAgent定義へ保存すること"
       - "技術的に誤った説明を読みやすさ優先で確定すること"
 
     required_context:
-      - context_id: "project_memory_docs"
+      - context_id: "project_summary"
         source_type: "memory_doc"
         document_names:
           - "project-summary.md"
-          - "current-status.md"
-          - "active-decisions.md"
-        purpose: "対象プロジェクトの背景と現在地を把握する"
+        purpose: "対象Projectの背景と読者に説明すべき前提を把握する"
         inclusion: "required"
 
-    optional_context:
       - context_id: "task_additional_sources"
         source_type: "additional_source"
         purpose: "ユーザーが指定した記事メモや検証ログを本文材料にする"
-        inclusion: "optional"
+        inclusion: "required"
 
+    optional_context:
       - context_id: "recent_conversation_context"
         source_type: "recent_context"
         purpose: "直近会話で確認した記事化候補を補助情報として使う"
+        inclusion: "optional"
+        handling_note: "Recent context must not be treated as approved project source of truth."
+
+      - context_id: "active_decisions"
+        source_type: "memory_doc"
+        document_names:
+          - "active-decisions.md"
+        purpose: "記事内で扱う設計判断がActive sourceと矛盾しないか確認する"
         inclusion: "optional"
 
     allowed_operations:
@@ -402,6 +556,7 @@ agents:
       - "invent results or metrics"
       - "expose sensitive private details unnecessarily"
       - "treat conversation-only ideas as approved project decisions"
+      - "store project-specific facts, decisions, or tasks in Agent Registry"
 
     output_contract:
       output_contract_id: "article_draft"

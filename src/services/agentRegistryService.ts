@@ -4,14 +4,17 @@ import YAML from "yaml";
 
 import type {
   AgentCode,
+  AgentCompletionCheckResult,
   AgentContextCandidates,
   AgentContextRequirement,
   AgentOutputContractOverride,
+  AgentPriority,
   AgentRegistryEntry,
   AgentRegistryFile,
   AgentRegistryValidationError,
   AgentRegistryValidationResult,
   AgentRegistryValidationWarning,
+  AgentScope,
   OutputContractConfig,
   OutputContractId,
   ProjectCode,
@@ -23,14 +26,33 @@ import type {
 
 const DEFAULT_AGENTS_YAML_PATH = "config/agents.yaml";
 
+const VALID_AGENT_PRIORITIES: AgentPriority[] = ["P0", "P1", "P2", "Later"];
+
+const VALID_AGENT_SCOPES: AgentScope[] = [
+  "project_independent",
+  "project_specific",
+  "experimental",
+];
+
 const VALID_OUTPUT_CONTRACTS: OutputContractId[] = [
-  "review_report",
-  "draft_documents",
-  "implementation_plan",
+  "adr_draft",
+  "requirements_document",
+  "implementation_review_report",
+  "task_breakdown",
   "article_draft",
 ];
 
 const VALID_WRITE_POLICIES: WritePolicyId[] = ["draft_only"];
+
+const DEFAULT_REQUIRED_P0_AGENTS: AgentCode[] = [
+  "adr_writer",
+  "requirements_writer",
+];
+
+const DEFAULT_REQUIRED_P1_AGENTS: AgentCode[] = [
+  "implementation_reviewer",
+  "task_planner",
+];
 
 export async function loadAgentRegistry(
   registryPath = DEFAULT_AGENTS_YAML_PATH,
@@ -104,19 +126,24 @@ export async function validateAgentRegistry(
   }
 
   errors.push(...validateDuplicateAgentCodes(registry));
+  errors.push(...validateCompletionRequirements(registry));
 
   for (const agent of registry.agents) {
     errors.push(...validateAgentRequiredFields(agent));
+    errors.push(...validateAgentPriorityAndScope(agent));
     errors.push(...validateAgentPolicies(registry, agent));
     errors.push(...validateAgentContextRequirements(agent));
 
     warnings.push(...validateAgentWarnings(agent));
   }
 
+  const completionCheck = checkAgentCompletionRequirements(registry);
+
   return {
     ok: errors.length === 0,
     errors,
     warnings,
+    completion_check: completionCheck,
   };
 }
 
@@ -145,6 +172,7 @@ export async function validateAgent(input: {
 
   const errors: AgentRegistryValidationError[] = [
     ...validateAgentRequiredFields(agent),
+    ...validateAgentPriorityAndScope(agent),
     ...validateAgentPolicies(registry, agent),
     ...validateAgentContextRequirements(agent),
   ];
@@ -200,6 +228,33 @@ export function supportsProject(
   );
 }
 
+export function checkAgentCompletionRequirements(
+  registry: AgentRegistryFile,
+): AgentCompletionCheckResult {
+  const requiredP0Agents =
+    registry.completion_requirements?.required_p0_agents ?? DEFAULT_REQUIRED_P0_AGENTS;
+  const requiredP1Agents =
+    registry.completion_requirements?.required_p1_agents ?? DEFAULT_REQUIRED_P1_AGENTS;
+
+  const existingAgents = new Set(registry.agents.map((agent) => agent.agent_code));
+
+  const missingP0Agents = requiredP0Agents.filter(
+    (agentCode) => !existingAgents.has(agentCode),
+  );
+  const missingP1Agents = requiredP1Agents.filter(
+    (agentCode) => !existingAgents.has(agentCode),
+  );
+
+  return {
+    required_p0_agents: requiredP0Agents,
+    required_p1_agents: requiredP1Agents,
+    missing_p0_agents: missingP0Agents,
+    missing_p1_agents: missingP1Agents,
+    p0_agents_satisfied: missingP0Agents.length === 0,
+    p1_agents_satisfied: missingP1Agents.length === 0,
+  };
+}
+
 function validateAgentRegistryShapeOrThrow(
   registry: AgentRegistryFile,
   registryPath: string,
@@ -234,6 +289,55 @@ function validateDuplicateAgentCodes(
   return errors;
 }
 
+function validateCompletionRequirements(
+  registry: AgentRegistryFile,
+): AgentRegistryValidationError[] {
+  const errors: AgentRegistryValidationError[] = [];
+  const completionCheck = checkAgentCompletionRequirements(registry);
+
+  for (const agentCode of completionCheck.missing_p0_agents) {
+    errors.push({
+      code: "required_p0_agent_missing",
+      message: `Required P0 agent is missing: ${agentCode}`,
+      agent_code: agentCode,
+    });
+  }
+
+  for (const agentCode of completionCheck.missing_p1_agents) {
+    errors.push({
+      code: "required_p1_agent_missing",
+      message: `Required P1 agent is missing: ${agentCode}`,
+      agent_code: agentCode,
+    });
+  }
+
+  for (const agentCode of completionCheck.required_p0_agents) {
+    const agent = findAgent(registry, agentCode);
+
+    if (agent && agent.priority !== "P0") {
+      errors.push({
+        code: "required_agent_priority_mismatch",
+        message: `Required P0 agent must have priority P0: ${agentCode}`,
+        agent_code: agentCode,
+      });
+    }
+  }
+
+  for (const agentCode of completionCheck.required_p1_agents) {
+    const agent = findAgent(registry, agentCode);
+
+    if (agent && agent.priority !== "P1") {
+      errors.push({
+        code: "required_agent_priority_mismatch",
+        message: `Required P1 agent must have priority P1: ${agentCode}`,
+        agent_code: agentCode,
+      });
+    }
+  }
+
+  return errors;
+}
+
 function validateAgentRequiredFields(
   agent: AgentRegistryEntry,
 ): AgentRegistryValidationError[] {
@@ -250,6 +354,22 @@ function validateAgentRequiredFields(
     errors.push({
       code: "missing_required_field",
       message: "agent_name is required",
+      agent_code: agent.agent_code,
+    });
+  }
+
+  if (!agent.priority) {
+    errors.push({
+      code: "missing_required_field",
+      message: "priority is required",
+      agent_code: agent.agent_code,
+    });
+  }
+
+  if (!agent.agent_scope) {
+    errors.push({
+      code: "missing_required_field",
+      message: "agent_scope is required",
       agent_code: agent.agent_code,
     });
   }
@@ -337,11 +457,55 @@ function validateAgentRequiredFields(
   return errors;
 }
 
+function validateAgentPriorityAndScope(
+  agent: AgentRegistryEntry,
+): AgentRegistryValidationError[] {
+  const errors: AgentRegistryValidationError[] = [];
+
+  if (agent.priority && !VALID_AGENT_PRIORITIES.includes(agent.priority)) {
+    errors.push({
+      code: "invalid_agent_priority",
+      message: `Invalid agent priority: ${agent.priority}`,
+      agent_code: agent.agent_code,
+    });
+  }
+
+  if (agent.agent_scope && !VALID_AGENT_SCOPES.includes(agent.agent_scope)) {
+    errors.push({
+      code: "invalid_agent_scope",
+      message: `Invalid agent scope: ${agent.agent_scope}`,
+      agent_code: agent.agent_code,
+    });
+  }
+
+  if (agent.agent_scope === "project_independent" && !agent.supported_project_codes.includes("*")) {
+    errors.push({
+      code: "invalid_supported_project_code",
+      message: "project_independent agent must support '*' project scope",
+      agent_code: agent.agent_code,
+    });
+  }
+
+  if (agent.agent_scope === "project_specific") {
+    errors.push({
+      code: "project_specific_agent_in_initial_registry",
+      message: "Initial M2-3 Agent Registry must not contain project_specific agents",
+      agent_code: agent.agent_code,
+    });
+  }
+
+  return errors;
+}
+
 function validateAgentPolicies(
   registry: AgentRegistryFile,
   agent: AgentRegistryEntry,
 ): AgentRegistryValidationError[] {
   const errors: AgentRegistryValidationError[] = [];
+
+  if (!agent.default_output_contract || !agent.output_contract || !agent.write_policy) {
+    return errors;
+  }
 
   const defaultOutputContractId = getOutputContractId(agent.default_output_contract);
   const outputContractId = getOutputContractId(agent.output_contract);
@@ -505,6 +669,22 @@ function validateAgentWarnings(
     warnings.push({
       code: "agent_all_projects_scope",
       message: "Agent supports all projects. Confirm this is intentional.",
+      agent_code: agent.agent_code,
+    });
+  }
+
+  if (agent.priority === "Later") {
+    warnings.push({
+      code: "later_agent_registered",
+      message: "Later-priority agent is registered but is not required for M2-3 Active completion.",
+      agent_code: agent.agent_code,
+    });
+  }
+
+  if (agent.agent_scope === "project_specific") {
+    warnings.push({
+      code: "project_specific_scope_declared",
+      message: "Project-specific agent scope should be handled by future presets or extensions.",
       agent_code: agent.agent_code,
     });
   }

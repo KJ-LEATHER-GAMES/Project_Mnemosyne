@@ -220,6 +220,10 @@ export type AgentCode = string;
 
 export type AgentStatus = "draft" | "active" | "archived";
 
+export type AgentPriority = "P0" | "P1" | "P2" | "Later";
+
+export type AgentScope = "project_independent" | "project_specific" | "experimental";
+
 export type AgentContextInclusion = "required" | "optional";
 
 export type AgentContextSourceType = SourceGroupType | "recent_context" | "session_context";
@@ -227,9 +231,10 @@ export type AgentContextSourceType = SourceGroupType | "recent_context" | "sessi
 export type AgentOutputFormat = "markdown" | "markdown_and_files" | "json";
 
 export type OutputContractId =
-  | "review_report"
-  | "draft_documents"
-  | "implementation_plan"
+  | "adr_draft"
+  | "requirements_document"
+  | "implementation_review_report"
+  | "task_breakdown"
   | "article_draft";
 
 export interface AgentRegistryFile {
@@ -238,6 +243,7 @@ export interface AgentRegistryFile {
   updated_at: string;
   description?: string;
   agent_selection_policy?: AgentSelectionPolicy;
+  completion_requirements?: AgentCompletionRequirements;
   defaults?: AgentRegistryDefaults;
   agents: AgentRegistryEntry[];
 }
@@ -246,7 +252,14 @@ export interface AgentSelectionPolicy {
   agent_registry_is_source_of_agent_contract: boolean;
   project_registry_is_source_of_project_sources: boolean;
   context_pack_is_generated_artifact: boolean;
+  project_specific_facts_decisions_tasks_must_not_be_stored_in_agent_registry: boolean;
   context_inclusion_is_decided_by: string[];
+}
+
+export interface AgentCompletionRequirements {
+  required_p0_agents: AgentCode[];
+  required_p1_agents: AgentCode[];
+  later_agents?: AgentCode[];
 }
 
 export interface AgentRegistryDefaults {
@@ -258,12 +271,14 @@ export interface AgentRegistryEntry {
   agent_code: AgentCode;
   agent_name: string;
   description?: string;
+  priority: AgentPriority;
+  agent_scope: AgentScope;
   status?: AgentStatus;
   version?: string;
 
   /**
    * Project codes this agent can be combined with.
-   * Use ["*"] only for project-independent agents.
+   * Use ["*"] for project-independent agents.
    */
   supported_project_codes: ProjectCode[];
 
@@ -297,7 +312,7 @@ export interface AgentContextRequirement {
 
   /**
    * Project Registry source_group reference.
-   * Example: mnemosyne_context_docs, ats_domain_docs.
+   * Project-independent agents should prefer generic source_type first.
    */
   source_group?: string;
 
@@ -307,7 +322,7 @@ export interface AgentContextRequirement {
   document_names?: string[];
 
   /**
-   * Direct relative paths. Use sparingly; source_group is preferred.
+   * Direct relative paths. Use sparingly; source_group or source_type is preferred.
    */
   paths?: string[];
 
@@ -349,6 +364,7 @@ export interface AgentRegistryValidationResult {
   agent_code?: AgentCode;
   errors: AgentRegistryValidationError[];
   warnings: AgentRegistryValidationWarning[];
+  completion_check?: AgentCompletionCheckResult;
 }
 
 export interface AgentRegistryValidationError {
@@ -358,10 +374,16 @@ export interface AgentRegistryValidationError {
     | "missing_required_field"
     | "duplicate_agent_code"
     | "invalid_supported_project_code"
+    | "invalid_agent_priority"
+    | "invalid_agent_scope"
     | "invalid_output_contract"
     | "invalid_write_policy"
     | "invalid_context_requirement"
-    | "invalid_context_path";
+    | "invalid_context_path"
+    | "required_p0_agent_missing"
+    | "required_p1_agent_missing"
+    | "required_agent_priority_mismatch"
+    | "project_specific_agent_in_initial_registry";
 
   message: string;
   agent_code?: AgentCode;
@@ -373,13 +395,22 @@ export interface AgentRegistryValidationWarning {
   code:
     | "agent_status_not_active"
     | "optional_context_empty"
-    | "context_source_group_unresolved"
+    | "agent_all_projects_scope"
     | "output_contract_has_no_additional_requirements"
-    | "agent_all_projects_scope";
+    | "later_agent_registered"
+    | "project_specific_scope_declared";
 
   message: string;
   agent_code?: AgentCode;
-  context_id?: string;
+}
+
+export interface AgentCompletionCheckResult {
+  required_p0_agents: AgentCode[];
+  required_p1_agents: AgentCode[];
+  missing_p0_agents: AgentCode[];
+  missing_p1_agents: AgentCode[];
+  p0_agents_satisfied: boolean;
+  p1_agents_satisfied: boolean;
 }
 
 export interface AgentContextCandidates {
