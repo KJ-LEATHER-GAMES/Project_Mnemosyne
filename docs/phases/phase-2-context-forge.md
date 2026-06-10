@@ -14,13 +14,13 @@ m2_status: "M2-0 active"
 review_status: "active"
 related_documents:
 
-* "docs/phases/phase-1-memory-foundation.md"
-* "docs/phases/phase-2-input-requirements.md"
-* "docs/adr/ADR-001-docs-as-source-of-memory.md"
-* "docs/adr/ADR-002-memory-source-of-truth-boundary.md"
-* "docs/adr/ADR-003-human-approved-memory-update.md"
-* "docs/adr/ADR-004-project-independent-memory-template.md"
-* "docs/adr/ADR-005-agent-context-separation.md"
+- "docs/phases/phase-1-memory-foundation.md"
+- "docs/phases/phase-2-input-requirements.md"
+- "docs/adr/ADR-001-docs-as-source-of-memory.md"
+- "docs/adr/ADR-002-memory-source-of-truth-boundary.md"
+- "docs/adr/ADR-003-human-approved-memory-update.md"
+- "docs/adr/ADR-004-project-independent-memory-template.md"
+- "docs/adr/ADR-005-agent-context-separation.md"
 
 ---
 

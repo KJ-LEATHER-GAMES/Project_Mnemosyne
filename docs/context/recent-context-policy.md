@@ -2,14 +2,14 @@
 title: "Recent Context Policy"
 document_id: "docs/context/recent-context-policy.md"
 document_role: "recent_context_policy"
-status: "draft"
-version: "0.1.0"
+status: "active"
+version: "1.0.0"
 created_at: "2026-06-09"
 updated_at: "2026-06-09"
 phase: "Phase 2: Context Forge"
 milestone: "M2-4: Context Build Request定義"
 owner: "Project Mnemosyne"
-review_status: "draft"
+review_status: "active"
 related_documents:
   - "docs/context/context-build-rule.md"
   - "docs/context/context-pack-structure.md"
@@ -23,9 +23,9 @@ related_documents:
 
 ## 1. Status
 
-`draft`
+`active`
 
-本書は、M2-4：Context Build Request定義におけるRecent Conversation Context / Conversation Summary / Session Contextの扱いを定義するドラフト成果物である。
+本書は、M2-4：Context Build Request定義におけるRecent Conversation Context / Conversation Summary / Session Contextの扱いを定義するActive成果物である。
 
 ---
 
@@ -61,6 +61,8 @@ Examples:
 
 Session Contextは正本ではない。
 
+Session Contextは今回のContext Pack生成に閉じる補助情報であり、Active sourceと競合する場合はActive sourceを優先する。
+
 ### 3.2 Recent Conversation Context
 
 Recent Conversation Contextとは、直近会話から抽出された、作業補助用の文脈である。
@@ -74,6 +76,8 @@ Examples:
 
 Recent Conversation Contextは正本ではない。
 
+Recent Conversation Contextは、Active memory docsやActive ADRへ反映される前の候補情報を、今回作業の文脈補助として扱うためのものである。
+
 ### 3.3 Conversation Summary
 
 Conversation Summaryとは、会話の終端または節目で、fact / decision / task / issue等の分類に従って整理された会話要約である。
@@ -81,6 +85,8 @@ Conversation Summaryとは、会話の終端または節目で、fact / decision
 Conversation Summaryは、Recent Conversation Contextの入力sourceになり得る。
 
 ただし、Conversation Summary自体もActive memory documentsやActive ADRより下位の補助情報である。
+
+Conversation Summary上の `decision` は、Active ADRまたはActive memory docsへ反映されるまでは、確定DecisionではなくDecision candidateとして扱う。
 
 ---
 
@@ -104,18 +110,24 @@ Session Context、Recent Conversation Context、Conversation Summaryは、Active
 
 ### 5.1 Session Context Inclusion
 
-Session Contextは、Context Build Requestで明示された場合のみ含める。
+Session Contextは、Context Build Requestで明示された場合に含める。
 
 ```yaml
 session_context:
   include: true
 ```
 
-`include: false` または未指定の場合、Context Packには以下のように出力する。
+`include: false` または未指定で、`notes` / `review_viewpoints` / `temporary_constraints` が存在しない場合、Context Packには以下のように出力する。
 
 ```text
 Not included.
 ```
+
+`include: false` または未指定で、`notes` / `review_viewpoints` / `temporary_constraints` が存在する場合、Context Builderは `include: true` へ正規化する。
+
+この正規化は、CLIの `--session-note` / `--review-viewpoint` とYAML入力の挙動を揃えるためである。
+
+Context Builderは必要に応じて `session_context_auto_included` をinfoとしてBuild Reportへ記録してよい。
 
 ### 5.2 Recent Context Inclusion
 
@@ -133,9 +145,21 @@ recent_context:
 Not included.
 ```
 
+`include: true` かつ `source` 未指定の場合、Context Builderは以下へdefault補完する。
+
+```yaml
+recent_context:
+  include: true
+  source: "conversation-summary"
+```
+
+この正規化は、M2-4初期版で正式対応するRecent Context sourceが `conversation-summary` のみであるためである。
+
+Context Builderは必要に応じて `recent_context_source_defaulted` をinfoとしてBuild Reportへ記録してよい。
+
 ### 5.3 Supported Recent Context Source
 
-M2-4初期版では、正式sourceは以下のみとする。
+M2-4 Active版では、正式sourceは以下のみとする。
 
 | Source | Description | Handling |
 |---|---|---|
@@ -146,6 +170,8 @@ M2-4初期版では、正式sourceは以下のみとする。
 - `chat-log`
 - `manual-recent-context-file`
 - `memory-search-result`
+
+Conversation Summaryの正式保存先はM2-5以降で確定する。
 
 ---
 
@@ -180,7 +206,7 @@ Context Builderは以下を行う。
 
 1. Context PackのWarningsへ記録する
 2. Build Reportへ競合sourceを記録する
-3. Recent Context側を確定根拠として使わない
+3. Session / Recent Context側を確定根拠として使わない
 4. 必要に応じてIssue candidateとして出力する
 
 Warning examples:
@@ -207,7 +233,7 @@ Handling:
 
 Recent Contextは、永続的な正本ではない。
 
-M2-4初期版では、以下を推奨defaultとする。
+M2-4 Active版では、以下を推奨defaultとする。
 
 | Field | Default | Description |
 |---|---:|---|
@@ -275,7 +301,10 @@ recent_context:
   max_items: 20
   max_age_days: 30
   include_resolved: false
+  include_archived: false
 ```
+
+`recent_context.include=true` かつ `source` 未指定の場合は、`source: "conversation-summary"` をdefault補完する。
 
 `session_context` の標準形は以下とする。
 
@@ -290,41 +319,47 @@ session_context:
     - "今回だけの制約"
 ```
 
+`session_context.include=false` または未指定で、notes等が存在する場合は `include: true` へ正規化する。
+
 ---
 
 ## 11. Validation Rules
 
-| Field | Rule | Error / Warning |
+| Field | Rule | Error / Warning / Info |
 |---|---|---|
 | `recent_context.source` | `conversation-summary` のみ正式対応 | unsupported valueはerror |
+| `recent_context.include=true` + `source`未指定 | `conversation-summary` へdefault補完 | info |
 | `recent_context.max_items` | 正の整数 | 不正値はerror |
 | `recent_context.max_age_days` | 正の整数 | 不正値はerror |
 | `session_context.notes` | string[] | string以外はerror |
 | `session_context.review_viewpoints` | string[] | string以外はerror |
 | `session_context.temporary_constraints` | string[] | string以外はerror |
+| `session_context.include=false` + notes等あり | `include=true` へ正規化 | info |
 
 ---
 
 ## 12. Acceptance Criteria
 
-M2-4の本書は、Active化時に以下を満たす必要がある。
+M2-4の本書は、以下を満たす。
 
-- [ ] Session Contextの定義が明確である。
-- [ ] Recent Conversation Contextの定義が明確である。
-- [ ] Conversation Summaryの位置づけが明確である。
-- [ ] Recent Contextが正本ではないことを明記している。
-- [ ] Active sourceとの競合時の扱いが定義されている。
-- [ ] Context Packの該当章へどう出力するかが定義されている。
-- [ ] `src/types/context.ts` と対応している。
+- [x] Session Contextの定義が明確である。
+- [x] Recent Conversation Contextの定義が明確である。
+- [x] Conversation Summaryの位置づけが明確である。
+- [x] Recent Contextが正本ではないことを明記している。
+- [x] Active sourceとの競合時の扱いが定義されている。
+- [x] Context Packの該当章へどう出力するかが定義されている。
+- [x] `recent_context.include=true` かつ `source` 未指定時のdefault補完を定義している。
+- [x] `session_context.include=false` かつnotes等ありの場合の正規化を定義している。
+- [x] `src/types/context.ts` と対応している。
 
 ---
 
-## 13. Open Issues for Review
+## 13. Follow-up Items
 
 | ID | Issue | Candidate Resolution |
 |---|---|---|
-| M2-4-RC-OI-001 | Conversation Summaryの保存先をどこにするか | M1 template方針に合わせてproject memory配下またはreview配下で検討 |
-| M2-4-RC-OI-002 | Recent Contextの取得をCLI実装でどこまで自動化するか | 初期版は明示指定時のみ |
+| M2-4-REV-P2-002 | Conversation Summaryの保存先をどこにするか | M2-5以降で確定 |
+| M2-4-RC-OI-002 | Recent Contextの取得をCLI実装でどこまで自動化するか | 初期版は明示指定時のみ。M2-5以降で拡張 |
 | M2-4-RC-OI-003 | 会話要約内decisionをどの時点でActive Decisionへ昇格するか | Human approval後にActive memory docs / ADRへ反映 |
 
 ---
@@ -334,3 +369,4 @@ M2-4の本書は、Active化時に以下を満たす必要がある。
 | Version | Date | Status | Summary | Author |
 |---|---|---|---|---|
 | 0.1.0 | 2026-06-09 | draft | Session Context / Recent Conversation Context / Conversation Summaryの扱いを定義。 | user / AI |
+| 1.0.0 | 2026-06-09 | active | P0/P1レビュー結果を反映し、recent context default、session auto include、Conversation Summary保存先の後続扱いを明確化。 | user / AI |
