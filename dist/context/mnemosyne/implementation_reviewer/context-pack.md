@@ -9,7 +9,7 @@
 | Item | Value |
 | --- | --- |
 | Context Pack Version | 1.0.0 |
-| Generated At | 2026-06-10T20:31:51.183Z |
+| Generated At | 2026-06-10T20:39:43.406Z |
 | Project Code | mnemosyne |
 | Project Name | Project Mnemosyne |
 | Agent Code | implementation_reviewer |
@@ -1551,9 +1551,9 @@ M2-6 context preview integration check
 | Source ID | src-008-build-report-rule-md |
 | Path | docs/context/build-report-rule.md |
 | Document ID | docs/context/build-report-rule.md |
-| Status | active |
+| Status | draft |
 | Source Type | additional_source |
-| Handling | include |
+| Handling | include_with_warning |
 | Purpose | Explicitly supplied additional source. |
 | Matched By | additional_source |
 | Explicitly Requested | true |
@@ -1566,14 +1566,14 @@ M2-6 context preview integration check
 title: "Build Report and Context Preview Rule"
 document_id: "docs/context/build-report-rule.md"
 document_role: "context_build_report_rule"
-status: "active"
+status: "draft"
 version: "0.1.0"
 created_at: "2026-06-10"
 updated_at: "2026-06-10"
 phase: "Phase 2: Context Forge"
 milestone: "M2-6: Context Preview実装"
 owner: "Project Mnemosyne"
-review_status: "active"
+review_status: "draft"
 related_documents:
   - "docs/context/context-pack-structure.md"
   - "docs/context/source-status-policy.md"
@@ -1588,7 +1588,7 @@ related_documents:
 
 ## 1. Status
 
-`active`
+`draft`
 
 本書は、M2-6：Context Preview実装のドラフト成果物である。
 
@@ -1774,7 +1774,7 @@ Semantic coverage scoring is not required in M2-6.
 Source Coverage summarizes the selected and excluded source population.
 
 | Metric | Description |
-|---|
+|---|---
 
 ...[truncated by M2-5 draft Context Builder]
 ```
@@ -1805,7 +1805,9 @@ Source Coverage summarizes the selected and excluded source population.
 
 ## 13. Warnings
 
-No warnings.
+| Type | Severity | Source ID | Message | Handling |
+| --- | --- | --- | --- | --- |
+| draft_source_included | warning | src-008-build-report-rule-md | Non-active source included with warning: docs/context/build-report-rule.md status=draft | docs/context/build-report-rule.md |
 
 ## 14. Source List
 
@@ -1818,7 +1820,7 @@ No warnings.
 | src-005-ADR-003-human-approved-memory-update-md | docs/adr/ADR-003-human-approved-memory-update.md | docs/adr/ADR-003-human-approved-memory-update.md | ADR-003: Human-Approved Memory Update | active | adr_source | 6. Active Decisions | アーキテクチャ判断や依存方向の根拠を確認する | include | mnemosyne_adrs | false | Matched Project Registry source group: mnemosyne_adrs. |
 | src-006-ADR-004-project-independent-memory-template-md | docs/adr/ADR-004-project-independent-memory-template.md | docs/adr/ADR-004-project-independent-memory-template.md | ADR-004: Project-Independent Memory Template | active | adr_source | 6. Active Decisions | アーキテクチャ判断や依存方向の根拠を確認する | include | mnemosyne_adrs | false | Matched Project Registry source group: mnemosyne_adrs. |
 | src-007-ADR-005-agent-context-separation-md | docs/adr/ADR-005-agent-context-separation.md | docs/adr/ADR-005-agent-context-separation.md | ADR-005: Agent and Project Context Separation | active | adr_source | 6. Active Decisions | アーキテクチャ判断や依存方向の根拠を確認する | include | mnemosyne_adrs | false | Matched Project Registry source group: mnemosyne_adrs. |
-| src-008-build-report-rule-md | docs/context/build-report-rule.md | docs/context/build-report-rule.md | Build Report and Context Preview Rule | active | additional_source | 11. Additional Sources | Explicitly supplied additional source. | include | additional_source | true | Explicitly requested by additional_sources or --source. |
+| src-008-build-report-rule-md | docs/context/build-report-rule.md | docs/context/build-report-rule.md | Build Report and Context Preview Rule | draft | additional_source | 11. Additional Sources | Explicitly supplied additional source. | include_with_warning | additional_source | true | Explicitly requested by additional_sources or --source. |
 
 ## 15. Build Report Summary
 
@@ -1826,7 +1828,7 @@ No warnings.
 | --- | --- |
 | Included Source Count | 8 |
 | Excluded Source Count | 0 |
-| Warning Count | 0 |
+| Warning Count | 1 |
 | Conflict Count | 0 |
 | Missing Required Source Count | 0 |
 | Token Budget Handling | none / approximate=true |

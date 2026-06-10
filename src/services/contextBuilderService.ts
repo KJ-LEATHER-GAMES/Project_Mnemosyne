@@ -17,7 +17,7 @@ import type {
   ContextTokenEstimate,
 } from "../types/context";
 import { createContextPreview } from "./contextPreviewService";
-import type { AgentContextRequirement, OutputContractId } from "../types/registry";
+import type { OutputContractId } from "../types/registry";
 
 export interface ContextBuildOutput {
   contextPackPath: string;
@@ -184,7 +184,7 @@ export async function buildContextPack(input: {
     buildReportPath,
     contextPreviewPath,
     report,
-    agentRequiredContext: toAgentRequiredContextPreviewKeys(resolvedAgent.agent.required_context),
+    agentRequiredContext: resolvedAgent.agent.required_context,
   });
   const contextPreviewMarkdown = contextPreviewOutput.contextPreviewMarkdown;
 
@@ -376,30 +376,6 @@ function renderContextPackMarkdown(input: {
     "## End of Context Pack",
     "",
   ].join("\n");
-}
-
-function toAgentRequiredContextPreviewKeys(requirements: AgentContextRequirement[]): string[] {
-  const keys = new Set<string>();
-
-  for (const requirement of requirements) {
-    for (const documentName of requirement.document_names ?? []) {
-      keys.add(documentName);
-    }
-
-    for (const directPath of requirement.paths ?? []) {
-      keys.add(directPath);
-    }
-
-    if (requirement.source_group) {
-      keys.add(requirement.source_group);
-    }
-
-    if ((requirement.document_names ?? []).length === 0 && (requirement.paths ?? []).length === 0 && !requirement.source_group) {
-      keys.add(requirement.source_type);
-    }
-  }
-
-  return [...keys];
 }
 
 function validateMinimalRequest(request: ContextBuildRequest): ContextBuildValidationIssue[] {

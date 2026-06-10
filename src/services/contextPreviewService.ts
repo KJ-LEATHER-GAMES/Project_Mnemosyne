@@ -7,7 +7,7 @@ import type {
   ContextSourceSelection,
   ContextTokenEstimate,
 } from "../types/context";
-import type { SourceStatus } from "../types/registry";
+import type { AgentContextRequirement, SourceStatus } from "../types/registry";
 
 export interface ContextPreviewInput {
   projectCode: string;
@@ -21,7 +21,7 @@ export interface ContextPreviewInput {
   buildReportPath: string;
   contextPreviewPath?: string;
   report: ContextBuildReport;
-  agentRequiredContext?: string[];
+  agentRequiredContext?: AgentContextRequirement[];
 }
 
 export interface ContextPreviewOutput {
@@ -75,9 +75,7 @@ const NON_FINAL_STATUSES = new Set<SourceStatus>([
  * Context Preview is not the Context Pack body. It is a pre-flight review artifact
  * for checking warnings, source status mix, token estimate, and agent context coverage.
  */
-export async function createContextPreview(
-  input: ContextPreviewInput,
-): Promise<ContextPreviewOutput> {
+export async function createContextPreview(input: ContextPreviewInput): Promise<ContextPreviewOutput> {
   const contextPreviewPath =
     input.contextPreviewPath ??
     path.join("dist/context", input.projectCode, input.agentCode, "context-preview.md");
@@ -313,10 +311,10 @@ function getStatusReviewNote(status: SourceStatus, includedCount: number): strin
 }
 
 function getAgentContextCoverageRows(
-  requiredContext: string[],
+  requiredContext: AgentContextRequirement[] | undefined,
   includedSources: ContextSourceSelection[],
 ): ContextPreviewCoverageRow[] {
-  if (requiredContext.length === 0) {
+  if (requiredContext === undefined) {
     return [
       {
         requiredContext: "Agent required_context not provided to preview service",
@@ -327,44 +325,123 @@ function getAgentContextCoverageRows(
     ];
   }
 
-  return requiredContext.map((contextItem) => {
-    const normalized = normalize(contextItem);
+  if (requiredContext.length === 0) {
+    return [
+      {
+        requiredContext: "No required context declared for this agent",
+        coverageStatus: "not_applicable",
+        matchedSources: [],
+        note: "Agent Registry required_context is empty.",
+      },
+    ];
+  }
+
+  return requiredContext.map((requirement) => {
     const matchedSources = includedSources.filter((source) =>
-      [
-        source.includedSection,
-        source.matchedBy,
-        source.selectionReason,
-        source.purpose,
-        source.sourceGroup,
-        source.sourceType,
-        source.path,
-      ]
-        .filter(Boolean)
-        .some((value) => normalize(String(value)).includes(normalized)),
+      sourceMatchesRequirement(source, requirement),
     );
 
     if (matchedSources.length === 0) {
       return {
-        requiredContext: contextItem,
+        requiredContext: requirement.context_id,
         coverageStatus: "missing",
         matchedSources: [],
-        note: "No structurally matched included source.",
+        note: buildRequirementNote(requirement, "No included source satisfied all requirement selectors."),
       };
     }
 
     const hasWarningOrReferenceOnly = matchedSources.some(
-      (source) => source.handling !== "include" || NON_FINAL_STATUSES.has(source.status),
+      (source) =>
+        source.handling !== "include" || NON_FINAL_STATUSES.has(source.status),
     );
 
     return {
-      requiredContext: contextItem,
+      requiredContext: requirement.context_id,
       coverageStatus: hasWarningOrReferenceOnly ? "partial" : "covered",
       matchedSources: matchedSources.map((source) => source.sourceId),
-      note: hasWarningOrReferenceOnly
-        ? "Matched, but at least one source is warning/reference/summarized or non-final evidence."
-        : "Matched by structural source metadata.",
+      note: buildRequirementNote(
+        requirement,
+        hasWarningOrReferenceOnly
+          ? "Matched, but at least one source is warning/reference/summarized or non-final evidence."
+          : "Matched by Agent Registry requirement selectors.",
+      ),
     };
   });
+}
+
+function sourceMatchesRequirement(
+  source: ContextSourceSelection,
+  requirement: AgentContextRequirement,
+): boolean {
+  if (source.sourceType !== requirement.source_type) {
+    return false;
+  }
+
+  if (
+    requirement.source_group &&
+    normalize(source.sourceGroup ?? "") !== normalize(requirement.source_group)
+  ) {
+    return false;
+  }
+
+  const requiredDocumentNames = requirement.document_names ?? [];
+  if (
+    requiredDocumentNames.length > 0 &&
+    !requiredDocumentNames.some((documentName) => sourceMatchesDocumentName(source, documentName))
+  ) {
+    return false;
+  }
+
+  const requiredPaths = requirement.paths ?? [];
+  if (
+    requiredPaths.length > 0 &&
+    !requiredPaths.some((requiredPath) => pathsMatch(source.path, requiredPath))
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+function sourceMatchesDocumentName(
+  source: ContextSourceSelection,
+  documentName: string,
+): boolean {
+  const expected = normalizePathValue(documentName);
+  const sourcePath = normalizePathValue(source.path);
+  const sourceDocumentId = normalizePathValue(source.documentId ?? "");
+
+  return (
+    path.posix.basename(sourcePath) === path.posix.basename(expected) ||
+    path.posix.basename(sourceDocumentId) === path.posix.basename(expected)
+  );
+}
+
+function pathsMatch(sourcePath: string, requiredPath: string): boolean {
+  const actual = normalizePathValue(sourcePath);
+  const expected = normalizePathValue(requiredPath);
+
+  return actual === expected || actual.endsWith(`/${expected}`);
+}
+
+function normalizePathValue(value: string): string {
+  return value.trim().replace(/\\/g, "/").replace(/^\.\//, "").toLowerCase();
+}
+
+function buildRequirementNote(
+  requirement: AgentContextRequirement,
+  resultNote: string,
+): string {
+  const selectors = [
+    `source_type=${requirement.source_type}`,
+    requirement.source_group ? `source_group=${requirement.source_group}` : undefined,
+    requirement.document_names?.length
+      ? `document_names=${requirement.document_names.join(",")}`
+      : undefined,
+    requirement.paths?.length ? `paths=${requirement.paths.join(",")}` : undefined,
+  ].filter(Boolean);
+
+  return `${resultNote} Selectors: ${selectors.join("; ")}. Purpose: ${requirement.purpose}`;
 }
 
 function getSourceCoverage(report: ContextBuildReport): {
@@ -408,7 +485,12 @@ function renderChecklist(
     NON_FINAL_STATUSES.has(source.status),
   );
   const tokenExceeded = report.tokenEstimate?.exceeded ?? false;
-  const missingCoverage = coverageRows.filter((row) => row.coverageStatus === "missing");
+  const incompleteCoverage = coverageRows.filter(
+    (row) =>
+      row.coverageStatus === "missing" ||
+      row.coverageStatus === "partial" ||
+      row.coverageStatus === "unknown",
+  );
 
   return table([
     ["Check", "Status", "Note"],
@@ -422,14 +504,10 @@ function renderChecklist(
     ],
     [
       "Agent required context is covered",
-      missingCoverage.length === 0 ? "ok" : "review",
-      `${missingCoverage.length} missing required context item(s)`,
+      incompleteCoverage.length === 0 ? "ok" : "review",
+      `${incompleteCoverage.length} incomplete required context item(s)`,
     ],
-    [
-      "No conflict warnings",
-      conflicts.length === 0 ? "ok" : "review",
-      `${conflicts.length} conflict warning(s)`,
-    ],
+    ["No conflict warnings", conflicts.length === 0 ? "ok" : "review", `${conflicts.length} conflict warning(s)`],
     [
       "Non-final evidence is acceptable",
       nonFinalEvidenceSources.length === 0 ? "ok" : "review",
@@ -442,11 +520,7 @@ function renderChecklist(
         ? `estimated=${report.tokenEstimate.estimatedInputTokens}, max=${report.tokenEstimate.maxTokens}`
         : "token estimate not available",
     ],
-    [
-      "Context Pack and Build Report paths are traceable",
-      "ok",
-      "source_id and warning code are shared",
-    ],
+    ["Context Pack and Build Report paths are traceable", "ok", "source_id and warning code are shared"],
   ]);
 }
 

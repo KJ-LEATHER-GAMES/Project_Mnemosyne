@@ -11,7 +11,7 @@
 
 | Item | Value |
 | --- | --- |
-| Generated At | 2026-06-10T20:31:51.187Z |
+| Generated At | 2026-06-10T20:39:43.409Z |
 | Project Code | mnemosyne |
 | Project Name | Project Mnemosyne |
 | Agent Code | implementation_reviewer |
@@ -19,8 +19,8 @@
 | Task Request | M2-6 context preview integration check |
 | Output Type | implementation_review_report |
 | Build Mode | standard |
-| Generation Result | success |
-| Review Recommendation | ready_for_human_review |
+| Generation Result | warning |
+| Review Recommendation | review_required_warnings_present |
 
 ---
 
@@ -30,9 +30,9 @@
 | --- | --- | --- |
 | No build errors | ok | 0 error(s) |
 | Required memory docs exist | ok | 0 missing required doc(s) |
-| Agent required context is covered | ok | 0 missing required context item(s) |
+| Agent required context is covered | review | 1 incomplete required context item(s) |
 | No conflict warnings | ok | 0 conflict warning(s) |
-| Non-final evidence is acceptable | ok | 0 non-final evidence source(s) included |
+| Non-final evidence is acceptable | review | 1 non-final evidence source(s) included |
 | Token estimate is within budget | ok | estimated=9632, max=24000 |
 | Context Pack and Build Report paths are traceable | ok | source_id and warning code are shared |
 
@@ -43,7 +43,7 @@
 | Item | Value |
 | --- | --- |
 | OK | true |
-| Warning Count | 0 |
+| Warning Count | 1 |
 | Error Count | 0 |
 | Conflict Count | 0 |
 | Missing Required Source Count | 0 |
@@ -62,7 +62,9 @@
 
 ## 5. Warning Summary
 
-No warnings.
+| Code | Severity | Source ID | Path | Message |
+| --- | --- | --- | --- | --- |
+| draft_source_included | warning | src-008-build-report-rule-md | docs/context/build-report-rule.md | Non-active source included with warning: docs/context/build-report-rule.md status=draft |
 
 ---
 
@@ -70,9 +72,9 @@ No warnings.
 
 | Status | Included Count | Excluded Count | Review Note |
 | --- | --- | --- | --- |
-| active | 8 | 0 | normal evidence |
+| active | 7 | 0 | normal evidence |
 | accepted | 0 | 0 | none included |
-| draft | 0 | 0 | none included |
+| draft | 1 | 0 | human review required; do not treat as final evidence |
 | proposed | 0 | 0 | none included |
 | archived | 0 | 0 | none included |
 | deprecated | 0 | 0 | none included |
@@ -85,9 +87,9 @@ No warnings.
 
 | Required Context | Coverage Status | Matched Sources | Note |
 | --- | --- | --- | --- |
-| active-decisions.md | covered | src-001-active-decisions-md | Matched by structural source metadata. |
-| project-summary.md | covered | src-002-project-summary-md | Matched by structural source metadata. |
-| additional_source | covered | src-008-build-report-rule-md | Matched by structural source metadata. |
+| active_decisions | covered | src-001-active-decisions-md | Matched by Agent Registry requirement selectors. Selectors: source_type=memory_doc; document_names=active-decisions.md. Purpose: 実装が従うべき設計判断と制約を確認する |
+| project_summary | covered | src-002-project-summary-md | Matched by Agent Registry requirement selectors. Selectors: source_type=memory_doc; document_names=project-summary.md. Purpose: 対象Projectの目的と主要構成を把握する |
+| task_additional_sources | partial | src-008-build-report-rule-md | Matched, but at least one source is warning/reference/summarized or non-final evidence. Selectors: source_type=additional_source. Purpose: ユーザーが明示したコード、ログ、設計文書をレビュー対象として扱う |
 
 ---
 
@@ -97,11 +99,11 @@ No warnings.
 | --- | --- |
 | Included Source Count | 8 |
 | Excluded Source Count | 0 |
-| Warning Source Count | 0 |
+| Warning Source Count | 1 |
 | Required Doc Count | 5 |
 | Missing Required Doc Count | 0 |
-| Active or Accepted Source Count | 8 |
-| Non-Final Evidence Source Count | 0 |
+| Active or Accepted Source Count | 7 |
+| Non-Final Evidence Source Count | 1 |
 
 ---
 
@@ -143,7 +145,7 @@ No warnings.
 | src-005-ADR-003-human-approved-memory-update-md | docs/adr/ADR-003-human-approved-memory-update.md | active | adr_source | 6. Active Decisions | include | アーキテクチャ判断や依存方向の根拠を確認する |
 | src-006-ADR-004-project-independent-memory-template-md | docs/adr/ADR-004-project-independent-memory-template.md | active | adr_source | 6. Active Decisions | include | アーキテクチャ判断や依存方向の根拠を確認する |
 | src-007-ADR-005-agent-context-separation-md | docs/adr/ADR-005-agent-context-separation.md | active | adr_source | 6. Active Decisions | include | アーキテクチャ判断や依存方向の根拠を確認する |
-| src-008-build-report-rule-md | docs/context/build-report-rule.md | active | additional_source | 11. Additional Sources | include | Explicitly supplied additional source. |
+| src-008-build-report-rule-md | docs/context/build-report-rule.md | draft | additional_source | 11. Additional Sources | include_with_warning | Explicitly supplied additional source. |
 
 ---
 
