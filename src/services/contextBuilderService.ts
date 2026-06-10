@@ -103,13 +103,17 @@ export async function buildContextPack(input: {
     recentContext: input.request.recentContext ?? { include: false },
   });
 
-  const tokenEstimate = estimateTokens(resolution.includedSources, tokenBudget.maxTokens);
+  const tokenEstimate = estimateTokens(
+    resolution.includedSources,
+    tokenBudget.maxTokens,
+    tokenBudget.reserveTokensForResponse,
+  );
   const warnings = [...resolution.warnings];
   if (tokenEstimate.exceeded) {
     warnings.push({
       code: "token_budget_exceeded",
       severity: "warning",
-      message: `Estimated input tokens exceed maxTokens: estimated=${tokenEstimate.estimatedInputTokens}, max=${tokenEstimate.maxTokens}`,
+      message: `Estimated input tokens exceed available input budget: estimated=${tokenEstimate.estimatedInputTokens}, available=${tokenEstimate.availableInputTokens}, max=${tokenEstimate.maxTokens}, reserve=${tokenEstimate.reserveTokensForResponse}`,
     });
   }
 
@@ -185,6 +189,8 @@ export async function buildContextPack(input: {
     contextPreviewPath,
     report,
     agentRequiredContext: resolvedAgent.agent.required_context,
+    contextPackMarkdown,
+    buildReportMarkdown,
   });
   const contextPreviewMarkdown = contextPreviewOutput.contextPreviewMarkdown;
 
@@ -404,15 +410,22 @@ function validateMinimalRequest(request: ContextBuildRequest): ContextBuildValid
   return errors;
 }
 
-function estimateTokens(sources: ResolvedSourceContent[], maxTokens: number): ContextTokenEstimate {
+function estimateTokens(
+  sources: ResolvedSourceContent[],
+  maxTokens: number,
+  reserveTokensForResponse: number,
+): ContextTokenEstimate {
   const estimatedInputTokens = Math.ceil(
     sources.reduce((sum, source) => sum + (source.excerpt?.length ?? 0), 0) / 4,
   );
+  const availableInputTokens = Math.max(0, maxTokens - reserveTokensForResponse);
   return {
     estimatedInputTokens,
     maxTokens,
-    exceeded: estimatedInputTokens > maxTokens,
-    handling: estimatedInputTokens > maxTokens ? "excluded" : "none",
+    reserveTokensForResponse,
+    availableInputTokens,
+    exceeded: estimatedInputTokens > availableInputTokens,
+    handling: estimatedInputTokens > availableInputTokens ? "excluded" : "none",
     approximate: true,
     note: "Approximate estimate using source excerpt character count / 4. Not tokenizer-based.",
   };

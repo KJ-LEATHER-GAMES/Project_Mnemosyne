@@ -22,6 +22,8 @@ export interface ContextPreviewInput {
   contextPreviewPath?: string;
   report: ContextBuildReport;
   agentRequiredContext?: AgentContextRequirement[];
+  contextPackMarkdown?: string;
+  buildReportMarkdown?: string;
 }
 
 export interface ContextPreviewOutput {
@@ -33,6 +35,8 @@ export interface ContextPreviewOutput {
 export type ContextPreviewReviewRecommendation =
   | "ready_for_human_review"
   | "review_required_warnings_present"
+  | "review_required_context_missing"
+  | "blocked_required_docs_missing"
   | "blocked_errors_present";
 
 export interface ContextPreviewCoverageRow {
@@ -75,12 +79,18 @@ const NON_FINAL_STATUSES = new Set<SourceStatus>([
  * Context Preview is not the Context Pack body. It is a pre-flight review artifact
  * for checking warnings, source status mix, token estimate, and agent context coverage.
  */
-export async function createContextPreview(input: ContextPreviewInput): Promise<ContextPreviewOutput> {
+export async function createContextPreview(
+  input: ContextPreviewInput,
+): Promise<ContextPreviewOutput> {
   const contextPreviewPath =
     input.contextPreviewPath ??
     path.join("dist/context", input.projectCode, input.agentCode, "context-preview.md");
 
-  const reviewRecommendation = getReviewRecommendation(input.report);
+  const coverageRows = getAgentContextCoverageRows(
+    input.agentRequiredContext,
+    input.report.includedSources ?? [],
+  );
+  const reviewRecommendation = getReviewRecommendation(input.report, coverageRows);
   const contextPreviewMarkdown = renderContextPreviewMarkdown({
     ...input,
     contextPreviewPath,
@@ -119,6 +129,7 @@ export function renderContextPreviewMarkdown(
     input.report.includedSources ?? [],
   );
   const coverage = getSourceCoverage(input.report);
+  const trace = getTraceabilityResult(input);
 
   return [
     "# Context Preview",
@@ -150,7 +161,7 @@ export function renderContextPreviewMarkdown(
     "",
     "## 2. Human Review Checklist",
     "",
-    renderChecklist(input.report, coverageRows),
+    renderChecklist(input.report, coverageRows, trace),
     "",
     "---",
     "",
@@ -232,9 +243,9 @@ export function renderContextPreviewMarkdown(
       ["Context Pack Path", input.contextPackPath],
       ["Build Report Path", input.buildReportPath],
       ["Context Preview Path", input.contextPreviewPath],
-      ["Source ID Shared With Context Pack", "yes"],
-      ["Source ID Shared With Build Report", "yes"],
-      ["Warning Code Shared With Build Report", "yes"],
+      ["Source ID Shared With Context Pack", trace.sourceIdsInContextPack],
+      ["Source ID Shared With Build Report", trace.sourceIdsInBuildReport],
+      ["Warning Code Shared With Build Report", trace.warningCodesInBuildReport],
     ]),
     "",
     "---",
@@ -269,9 +280,22 @@ export function renderContextPreviewMarkdown(
   ].join("\n");
 }
 
-function getReviewRecommendation(report: ContextBuildReport): ContextPreviewReviewRecommendation {
+function getReviewRecommendation(
+  report: ContextBuildReport,
+  coverageRows: ContextPreviewCoverageRow[],
+): ContextPreviewReviewRecommendation {
   if ((report.errors ?? []).length > 0 || report.generationResult === "failed") {
     return "blocked_errors_present";
+  }
+
+  if (report.requiredDocsCheck && !report.requiredDocsCheck.standard_docs_satisfied) {
+    return "blocked_required_docs_missing";
+  }
+
+  if (
+    coverageRows.some((row) => row.coverageStatus === "missing" || row.coverageStatus === "unknown")
+  ) {
+    return "review_required_context_missing";
   }
 
   if ((report.warnings ?? []).length > 0 || report.generationResult === "warning") {
@@ -346,24 +370,28 @@ function getAgentContextCoverageRows(
         requiredContext: requirement.context_id,
         coverageStatus: "missing",
         matchedSources: [],
-        note: buildRequirementNote(requirement, "No included source satisfied all requirement selectors."),
+        note: buildRequirementNote(
+          requirement,
+          "No included source satisfied all requirement selectors.",
+        ),
       };
     }
 
-    const hasWarningOrReferenceOnly = matchedSources.some(
-      (source) =>
-        source.handling !== "include" || NON_FINAL_STATUSES.has(source.status),
-    );
+    const nonFinalCount = matchedSources.filter(
+      (source) => source.handling !== "include" || NON_FINAL_STATUSES.has(source.status),
+    ).length;
+    const evidenceNote =
+      nonFinalCount > 0
+        ? ` Required context is present, but ${nonFinalCount} matched source(s) require evidence-quality review.`
+        : "";
 
     return {
       requiredContext: requirement.context_id,
-      coverageStatus: hasWarningOrReferenceOnly ? "partial" : "covered",
+      coverageStatus: "covered",
       matchedSources: matchedSources.map((source) => source.sourceId),
       note: buildRequirementNote(
         requirement,
-        hasWarningOrReferenceOnly
-          ? "Matched, but at least one source is warning/reference/summarized or non-final evidence."
-          : "Matched by Agent Registry requirement selectors.",
+        `Matched by Agent Registry requirement selectors.${evidenceNote}`,
       ),
     };
   });
@@ -403,10 +431,7 @@ function sourceMatchesRequirement(
   return true;
 }
 
-function sourceMatchesDocumentName(
-  source: ContextSourceSelection,
-  documentName: string,
-): boolean {
+function sourceMatchesDocumentName(source: ContextSourceSelection, documentName: string): boolean {
   const expected = normalizePathValue(documentName);
   const sourcePath = normalizePathValue(source.path);
   const sourceDocumentId = normalizePathValue(source.documentId ?? "");
@@ -428,10 +453,7 @@ function normalizePathValue(value: string): string {
   return value.trim().replace(/\\/g, "/").replace(/^\.\//, "").toLowerCase();
 }
 
-function buildRequirementNote(
-  requirement: AgentContextRequirement,
-  resultNote: string,
-): string {
+function buildRequirementNote(requirement: AgentContextRequirement, resultNote: string): string {
   const selectors = [
     `source_type=${requirement.source_type}`,
     requirement.source_group ? `source_group=${requirement.source_group}` : undefined,
@@ -477,6 +499,11 @@ function getSourceCoverage(report: ContextBuildReport): {
 function renderChecklist(
   report: ContextBuildReport,
   coverageRows: ContextPreviewCoverageRow[],
+  trace: {
+    sourceIdsInContextPack: string;
+    sourceIdsInBuildReport: string;
+    warningCodesInBuildReport: string;
+  },
 ): string {
   const errors = report.errors ?? [];
   const warnings = report.warnings ?? [];
@@ -486,10 +513,7 @@ function renderChecklist(
   );
   const tokenExceeded = report.tokenEstimate?.exceeded ?? false;
   const incompleteCoverage = coverageRows.filter(
-    (row) =>
-      row.coverageStatus === "missing" ||
-      row.coverageStatus === "partial" ||
-      row.coverageStatus === "unknown",
+    (row) => row.coverageStatus === "missing" || row.coverageStatus === "unknown",
   );
 
   return table([
@@ -507,7 +531,11 @@ function renderChecklist(
       incompleteCoverage.length === 0 ? "ok" : "review",
       `${incompleteCoverage.length} incomplete required context item(s)`,
     ],
-    ["No conflict warnings", conflicts.length === 0 ? "ok" : "review", `${conflicts.length} conflict warning(s)`],
+    [
+      "No conflict warnings",
+      conflicts.length === 0 ? "ok" : "review",
+      `${conflicts.length} conflict warning(s)`,
+    ],
     [
       "Non-final evidence is acceptable",
       nonFinalEvidenceSources.length === 0 ? "ok" : "review",
@@ -517,11 +545,27 @@ function renderChecklist(
       "Token estimate is within budget",
       tokenExceeded ? "review" : "ok",
       report.tokenEstimate
-        ? `estimated=${report.tokenEstimate.estimatedInputTokens}, max=${report.tokenEstimate.maxTokens}`
+        ? `estimated=${report.tokenEstimate.estimatedInputTokens}, available=${report.tokenEstimate.availableInputTokens}, max=${report.tokenEstimate.maxTokens}, reserve=${report.tokenEstimate.reserveTokensForResponse}`
         : "token estimate not available",
     ],
-    ["Context Pack and Build Report paths are traceable", "ok", "source_id and warning code are shared"],
+    [
+      "Context Pack and Build Report paths are traceable",
+      isTraceVerified(trace) ? "ok" : "review",
+      `contextPack=${trace.sourceIdsInContextPack}; buildReportSources=${trace.sourceIdsInBuildReport}; buildReportWarnings=${trace.warningCodesInBuildReport}`,
+    ],
   ]);
+}
+
+function isTraceVerified(trace: {
+  sourceIdsInContextPack: string;
+  sourceIdsInBuildReport: string;
+  warningCodesInBuildReport: string;
+}): boolean {
+  return [
+    trace.sourceIdsInContextPack,
+    trace.sourceIdsInBuildReport,
+    trace.warningCodesInBuildReport,
+  ].every((value) => value === "yes" || value === "not_applicable");
 }
 
 function renderAgentContextCoverage(rows: ContextPreviewCoverageRow[]): string {
@@ -542,13 +586,14 @@ function renderIssues(issues: ContextBuildValidationIssue[]): string {
   }
 
   return table([
-    ["Code", "Severity", "Source ID", "Path", "Message"],
+    ["Code", "Severity", "Source ID", "Path", "Message", "Handling"],
     ...issues.map((issue) => [
       issue.code,
       issue.severity,
       issue.sourceId ?? "",
       issue.path ?? "",
       issue.message,
+      getIssueHandling(issue),
     ]),
   ]);
 }
@@ -562,7 +607,8 @@ function renderTokenEstimate(tokenEstimate?: ContextTokenEstimate): string {
     ["Item", "Value"],
     ["Estimated Input Tokens", String(tokenEstimate.estimatedInputTokens)],
     ["Max Tokens", String(tokenEstimate.maxTokens)],
-    ["Reserve Tokens For Response", "not available in ContextBuildReport"],
+    ["Reserve Tokens For Response", String(tokenEstimate.reserveTokensForResponse)],
+    ["Available Input Tokens", String(tokenEstimate.availableInputTokens)],
     ["Exceeded", String(tokenEstimate.exceeded)],
     ["Handling", tokenEstimate.handling],
     ["Approximate", String(tokenEstimate.approximate)],
@@ -605,6 +651,51 @@ function renderExcludedSources(sources: ContextSourceSelection[]): string {
       source.handling,
     ]),
   ]);
+}
+
+function getIssueHandling(issue: ContextBuildValidationIssue): string {
+  if (issue.severity === "error") {
+    return "Stop build and correct the error before AI input.";
+  }
+  if (String(issue.code).includes("conflict")) {
+    return "Review conflicting sources and do not make a final decision until resolved.";
+  }
+  if (issue.code === "token_budget_exceeded") {
+    return "Reduce, summarize, or exclude lower-priority context before AI input.";
+  }
+  if (issue.code === "source_excluded") {
+    return "Confirm the exclusion reason and whether the source is required for the task.";
+  }
+  if (String(issue.code).endsWith("_source_included") || issue.code === "unknown_status") {
+    return "Review as non-final evidence; do not treat it as an approved source of truth.";
+  }
+  return "Review the warning before approving the Context Pack for AI input.";
+}
+
+function getTraceabilityResult(input: ContextPreviewInput): {
+  sourceIdsInContextPack: string;
+  sourceIdsInBuildReport: string;
+  warningCodesInBuildReport: string;
+} {
+  const includedSourceIds = (input.report.includedSources ?? []).map((source) => source.sourceId);
+  const warningCodes = (input.report.warnings ?? []).map((warning) => warning.code);
+
+  return {
+    sourceIdsInContextPack: verifyValuesPresent(includedSourceIds, input.contextPackMarkdown),
+    sourceIdsInBuildReport: verifyValuesPresent(includedSourceIds, input.buildReportMarkdown),
+    warningCodesInBuildReport: verifyValuesPresent(warningCodes, input.buildReportMarkdown),
+  };
+}
+
+function verifyValuesPresent(values: string[], content?: string): string {
+  if (content === undefined) {
+    return "not_verified";
+  }
+  if (values.length === 0) {
+    return "not_applicable";
+  }
+  const missing = values.filter((value) => !content.includes(value));
+  return missing.length === 0 ? "yes" : `no (missing: ${missing.join(", ")})`;
 }
 
 function isConflictIssue(issue: ContextBuildValidationIssue): boolean {

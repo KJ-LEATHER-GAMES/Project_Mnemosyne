@@ -76,7 +76,7 @@ export function renderBuildReportMarkdown(report: ContextBuildReport): string {
     "",
     renderRequiredDocsCheck(report.requiredDocsCheck),
     "",
-    "## 3. Known Limitations / Unsupported Features",
+    "## 3. Unsupported / Placeholder Features",
     "",
     renderUnsupportedFeatures(report.unsupportedFeatures),
     "",
@@ -107,6 +107,8 @@ export function renderBuildReportMarkdown(report: ContextBuildReport): string {
             report.tokenEstimate.note ?? "Approximate character-count / 4 heuristic.",
           ],
           ["Max Tokens", String(report.tokenEstimate.maxTokens)],
+          ["Reserve Tokens For Response", String(report.tokenEstimate.reserveTokensForResponse)],
+          ["Available Input Tokens", String(report.tokenEstimate.availableInputTokens)],
           ["Exceeded", String(report.tokenEstimate.exceeded)],
           ["Handling", report.tokenEstimate.handling],
           ["Approximate", String(report.tokenEstimate.approximate)],
@@ -210,15 +212,35 @@ function renderIssues(issues: ContextBuildValidationIssue[]): string {
   }
 
   return table([
-    ["Code", "Severity", "Source ID", "Path", "Message"],
+    ["Code", "Severity", "Source ID", "Path", "Message", "Handling"],
     ...issues.map((issue) => [
       issue.code,
       issue.severity,
       issue.sourceId ?? "",
       issue.path ?? "",
       issue.message,
+      getIssueHandling(issue),
     ]),
   ]);
+}
+
+function getIssueHandling(issue: ContextBuildValidationIssue): string {
+  if (issue.severity === "error") {
+    return "Stop build and correct the error before AI input.";
+  }
+  if (String(issue.code).includes("conflict")) {
+    return "Review conflicting sources and do not make a final decision until resolved.";
+  }
+  if (issue.code === "token_budget_exceeded") {
+    return "Reduce, summarize, or exclude lower-priority context before AI input.";
+  }
+  if (issue.code === "source_excluded") {
+    return "Confirm the exclusion reason and whether the source is required for the task.";
+  }
+  if (String(issue.code).endsWith("_source_included") || issue.code === "unknown_status") {
+    return "Review as non-final evidence; do not treat it as an approved source of truth.";
+  }
+  return "Review the warning before approving the Context Pack for AI input.";
 }
 
 function renderSources(sources: ContextSourceSelection[]): string {

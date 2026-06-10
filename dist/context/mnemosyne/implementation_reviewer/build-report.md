@@ -4,7 +4,7 @@
 
 | Item | Value |
 | --- | --- |
-| Generation Result | warning |
+| Generation Result | success |
 | OK | true |
 | Project Code | mnemosyne |
 | Agent Code | implementation_reviewer |
@@ -14,7 +14,7 @@
 | Source Status Policy | active_preferred |
 | Included Source Count | 8 |
 | Excluded Source Count | 0 |
-| Warning Count | 1 |
+| Warning Count | 0 |
 | Error Count | 0 |
 
 ## 2. Required Docs Check
@@ -34,7 +34,7 @@
 | next-actions.md | C:/Users/monsi/OneDrive/Apps/remotely-save/Project_Mnemosyne/docs/projects/mnemosyne/memory/next-actions.md | true |
 | ai-entrypoint.md | C:/Users/monsi/OneDrive/Apps/remotely-save/Project_Mnemosyne/docs/projects/mnemosyne/memory/ai-entrypoint.md | true |
 
-## 3. Known Limitations / Unsupported Features
+## 3. Unsupported / Placeholder Features
 
 - Recent Context loader is a placeholder. Conversation Summary files are not loaded yet.
 - Semantic conflict detection is not implemented. Only structural warnings are generated.
@@ -46,9 +46,7 @@ None.
 
 ## 5. Warnings
 
-| Code | Severity | Source ID | Path | Message |
-| --- | --- | --- | --- | --- |
-| draft_source_included | warning | src-008-build-report-rule-md | docs/context/build-report-rule.md | Non-active source included with warning: docs/context/build-report-rule.md status=draft |
+None.
 
 ## 6. Included Sources
 
@@ -61,7 +59,7 @@ None.
 | src-005-ADR-003-human-approved-memory-update-md | docs/adr/ADR-003-human-approved-memory-update.md | docs/adr/ADR-003-human-approved-memory-update.md | ADR-003: Human-Approved Memory Update | active | adr_source | 6. Active Decisions | agent_optional_context | include | mnemosyne_adrs | false | Matched Project Registry source group: mnemosyne_adrs. |
 | src-006-ADR-004-project-independent-memory-template-md | docs/adr/ADR-004-project-independent-memory-template.md | docs/adr/ADR-004-project-independent-memory-template.md | ADR-004: Project-Independent Memory Template | active | adr_source | 6. Active Decisions | agent_optional_context | include | mnemosyne_adrs | false | Matched Project Registry source group: mnemosyne_adrs. |
 | src-007-ADR-005-agent-context-separation-md | docs/adr/ADR-005-agent-context-separation.md | docs/adr/ADR-005-agent-context-separation.md | ADR-005: Agent and Project Context Separation | active | adr_source | 6. Active Decisions | agent_optional_context | include | mnemosyne_adrs | false | Matched Project Registry source group: mnemosyne_adrs. |
-| src-008-build-report-rule-md | docs/context/build-report-rule.md | docs/context/build-report-rule.md | Build Report and Context Preview Rule | draft | additional_source | 11. Additional Sources | additional_source | include_with_warning | additional_source | true | Explicitly requested by additional_sources or --source. |
+| src-008-build-report-rule-md | docs/context/build-report-rule.md | docs/context/build-report-rule.md | Build Report and Context Preview Rule | active | additional_source | 11. Additional Sources | additional_source | include | additional_source | true | Explicitly requested by additional_sources or --source. |
 
 ## 7. Excluded Sources
 
@@ -71,9 +69,11 @@ None.
 
 | Item | Value |
 | --- | --- |
-| Estimated Input Tokens | 9632 (approximate) |
+| Estimated Input Tokens | 9383 (approximate) |
 | Estimate Method | Approximate estimate using source excerpt character count / 4. Not tokenizer-based. |
 | Max Tokens | 24000 |
+| Reserve Tokens For Response | 4000 |
+| Available Input Tokens | 20000 |
 | Exceeded | false |
 | Handling | none |
 | Approximate | true |

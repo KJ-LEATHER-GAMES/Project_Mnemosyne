@@ -289,6 +289,8 @@ export interface ContextBuildReport {
 export interface ContextTokenEstimate {
   estimatedInputTokens: number;
   maxTokens: number;
+  reserveTokensForResponse: number;
+  availableInputTokens: number;
   exceeded: boolean;
   handling: "none" | "summarized" | "excluded" | "failed";
   approximate: boolean;

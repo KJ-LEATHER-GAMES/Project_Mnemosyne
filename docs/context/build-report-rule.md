@@ -1,293 +1,54 @@
 ---
 title: "Build Report and Context Preview Rule"
 document_id: "docs/context/build-report-rule.md"
-document_role: "context_build_report_rule"
-status: "draft"
-version: "0.1.0"
+document_role: "context_build_report_and_preview_rule"
+status: "active"
+version: "1.0.0"
 created_at: "2026-06-10"
-updated_at: "2026-06-10"
+updated_at: "2026-06-11"
 phase: "Phase 2: Context Forge"
 milestone: "M2-6: Context Preview実装"
 owner: "Project Mnemosyne"
-review_status: "draft"
+review_status: "active"
 related_documents:
   - "docs/context/context-pack-structure.md"
   - "docs/context/source-status-policy.md"
-  - "docs/context/context-build-rule.md"
-  - "docs/templates/context/context-pack.template.md"
   - "docs/templates/context/context-preview.template.md"
   - "docs/templates/context/build-report.template.md"
-  - "src/services/contextPreviewService.ts"
 ---
 
 # Build Report and Context Preview Rule
 
 ## 1. Status
 
-`draft`
+`active`
 
-本書は、M2-6：Context Preview実装のドラフト成果物である。
-
----
+本書は、M2-6：Context Preview実装のActive成果物として、Context Pack、Build Report、Context Previewの責務、出力項目、判定規則、追跡規則を定義する。
 
 ## 2. Purpose
 
-本書は、Context PackをAIへ投入する前に、人間が確認するための **Context Preview** と、生成過程を追跡する **Build Report** の出力ルールを定義する。
+AIへContext Packを渡す前に、人間が次の事項を確認できるようにする。
 
-M2-6では、Context Pack本文を直接読まなくても、以下を確認できる状態を目指す。
+- 採用・除外source
+- warning / error
+- source statusの混在
+- Agent要求Contextの充足状況
+- source evidence quality
+- token budget
+- Context Pack / Build Report / Context Preview間のtraceability
+- AI投入可否に関する人間レビュー状態
 
-- どのsourceが含まれ、どのsourceが除外されたか
-- active / accepted / draft / proposed / archived / deprecated / superseded / unknown sourceが混在していないか
-- Context不足、競合候補、token budget超過がないか
-- Agent要求Contextが満たされているか
-- Context Pack本文とBuild Reportの対応を追跡できるか
+## 3. Artifact Responsibilities
 
----
-
-## 3. Scope
-
-### 3.1 In Scope
-
-- Context PackとPreviewの差分定義
-- Build Reportの詳細出力ルール
-- Context Previewの人間確認用出力ルール
-- source list / warnings / token estimate / coverageの表示ルール
-- source status混在状況の表示ルール
-- Agent要求Contextの充足状況の表示ルール
-- Context Pack本文とBuild Reportのtrace rule
-- `dist/context/{project_code}/{agent_code}/context-preview.md` の出力ルール
-
-### 3.2 Out of Scope
-
-- Context Pack本文の章構成変更
-- Agent Registry自体のschema変更
-- Semantic conflict detectionの完全実装
-- tokenizerベースの厳密なtoken count
-- GUI Preview
-- RAG検索結果Preview
-
----
-
-## 4. Artifact Relationship
-
-M2-6の生成物は以下の関係とする。
-
-| Artifact | Primary Reader | Purpose | Source of Truth |
-|---|---|---|---|
-| Context Pack | AI | AI投入用の本文Context | no |
-| Build Report | human / tool | 生成過程、検証結果、採用・除外理由の詳細 | no |
-| Context Preview | human | AI投入前の確認用サマリー | no |
-
-Context Previewは、Context Packの短縮版ではない。  
-Context Previewは、**AIに渡す内容そのものではなく、AIへ渡す前に人間が確認すべきリスク・充足状況・trace情報をまとめた確認用成果物**である。
-
----
-
-## 5. Context Pack and Preview Difference
-
-| Item | Context Pack | Context Preview |
+| Artifact | Primary Reader | Responsibility |
 |---|---|---|
-| Main purpose | AIへ渡す作業文脈 | 人間が投入前に確認する |
-| Includes source excerpts | yes | no, 原則summaryのみ |
-| Includes full task context | yes | summary only |
-| Includes warnings | yes | yes, emphasized |
-| Includes source list | yes | yes, compact plus status summary |
-| Includes token estimate | summary only | yes, review-focused |
-| Includes coverage | optional summary | required |
-| Includes agent required context satisfaction | usually implicit | required |
-| Use as AI input | yes | no |
-| Use as source of truth | no | no |
+| Context Pack | AI | 選択された文脈本文を提供する |
+| Build Report | 人間・開発者 | 選択、除外、検証、token計算、warning/errorの詳細を記録する |
+| Context Preview | 人間 | AI投入前の判断に必要な要点を集約する |
 
----
+3成果物はいずれも生成物であり、正本ではない。
 
-## 6. Required Build Report Sections
-
-Build Reportは以下の章を持つ。
-
-```md
-# Context Build Report
-
-## 1. Build Result
-## 2. Request Summary
-## 3. Output Artifacts
-## 4. Required Docs Check
-## 5. Agent Context Coverage
-## 6. Source Coverage
-## 7. Source Status Distribution
-## 8. Warnings
-## 9. Errors
-## 10. Included Sources
-## 11. Excluded Sources
-## 12. Token Estimate
-## 13. Context Pack Trace
-## 14. Unsupported / Placeholder Features
-```
-
----
-
-## 7. Required Context Preview Sections
-
-Context Previewは以下の章を持つ。
-
-```md
-# Context Preview
-
-## 1. Preview Summary
-## 2. Human Review Checklist
-## 3. Build Result
-## 4. Output Artifacts
-## 5. Warning Summary
-## 6. Source Status Mix
-## 7. Agent Context Coverage
-## 8. Source Coverage
-## 9. Token Estimate
-## 10. Context Pack and Build Report Trace
-## 11. Included Source List
-## 12. Excluded Source List
-## 13. Review Decision
-```
-
----
-
-## 8. Warning Rules
-
-Context Preview must surface the same warning codes as Context Pack / Build Report.
-
-| Warning Code | Preview Handling |
-|---|---|
-| `missing_required_doc` | P0 risk. Show in Warning Summary and Agent Context Coverage if relevant. |
-| `draft_source_included` | Show in Source Status Mix and Included Source List. |
-| `proposed_source_included` | Show in Source Status Mix and Included Source List. |
-| `archived_source_included` | Show in Source Status Mix and Included Source List. |
-| `deprecated_source_included` | Show in Source Status Mix and Included Source List. |
-| `superseded_source_included` | Show in Source Status Mix and Included Source List. |
-| `unknown_status` | Show as P0/P1 review risk depending on source role. |
-| `conflict_detected` | Show in Warning Summary. Human review required. |
-| `adr_conflict_detected` | Show as P0 risk. Human review required. |
-| `recent_context_conflict` | Show in Warning Summary. Active source takes precedence. |
-| `source_excluded` | Show in Excluded Source List. |
-| `token_budget_exceeded` | Show in Token Estimate and Review Checklist. |
-
----
-
-## 9. Agent Context Coverage Rule
-
-Agent Context Coverage verifies whether the Context Pack satisfies the agent's requested context.
-
-### 9.1 Coverage Status
-
-| Status | Meaning |
-|---|---|
-| `covered` | At least one included source satisfies the required context item. |
-| `partial` | Source exists but is summarized, warning-only, reference-only, or weakly matched. |
-| `missing` | No included source satisfies the required context item. |
-| `not_applicable` | The required item is not applicable to this build request. |
-| `unknown` | Coverage cannot be determined by the current builder. |
-
-### 9.2 Coverage Matching Inputs
-
-Coverage may be calculated from the following fields.
-
-- Agent Registry `required_context`
-- Agent Registry `optional_context`
-- Context source `includedSection`
-- Context source `matchedBy`
-- Context source `inclusionReason`
-- Context source `sourceType`
-- Task Request
-- Additional Sources
-
-### 9.3 Initial Implementation Rule
-
-M2-6 initial implementation may use deterministic structural matching only.
-
-Semantic coverage scoring is not required in M2-6.
-
----
-
-## 10. Source Coverage Rule
-
-Source Coverage summarizes the selected and excluded source population.
-
-| Metric | Description |
-|---|---|
-| `included_source_count` | Count of sources included in Context Pack. |
-| `excluded_source_count` | Count of sources excluded by policy, missing path, or token budget. |
-| `warning_source_count` | Count of included sources with warning handling. |
-| `required_doc_count` | Count of required memory docs declared. |
-| `missing_required_doc_count` | Count of required memory docs missing. |
-| `active_or_accepted_count` | Count of sources that can be treated as normal evidence. |
-| `non_final_evidence_count` | Count of draft/proposed/archived/deprecated/superseded/unknown sources. |
-
----
-
-## 11. Source Status Mix Rule
-
-Context Preview must show source status distribution.
-
-Minimum output fields:
-
-| Status | Included Count | Excluded Count | Review Note |
-|---|---:|---:|---|
-| active |  |  |  |
-| accepted |  |  |  |
-| draft |  |  |  |
-| proposed |  |  |  |
-| archived |  |  |  |
-| deprecated |  |  |  |
-| superseded |  |  |  |
-| unknown |  |  |  |
-
-If any non-final evidence source is included, Context Preview must show:
-
-```text
-Human review required before treating this Context Pack as safe for AI input.
-```
-
----
-
-## 12. Token Estimate Rule
-
-M2-6 token estimate may use the M2-5 approximate method.
-
-```text
-estimatedInputTokens = ceil(totalIncludedSourceExcerptCharacters / 4)
-```
-
-The Preview must explicitly label this as approximate.
-
-| Field | Required | Note |
-|---|:---:|---|
-| estimated_input_tokens | yes | approximate allowed |
-| max_tokens | yes | from request or default |
-| reserve_tokens_for_response | recommended | if available |
-| exceeded | yes | true / false |
-| handling | yes | none / summarized / excluded / failed |
-| note | yes | calculation note |
-
----
-
-## 13. Trace Rule
-
-Context Preview must allow human reviewers to trace Context Pack and Build Report correspondence.
-
-Required trace fields:
-
-| Field | Description |
-|---|---|
-| `context_pack_path` | Generated Context Pack path. |
-| `build_report_path` | Generated Build Report path. |
-| `context_preview_path` | Generated Context Preview path. |
-| `source_id` | Shared source ID in Context Pack and Build Report. |
-| `included_section` | Context Pack section where source was inserted. |
-| `warning_code` | Shared warning code when applicable. |
-| `generation_result` | success / warning / failed. |
-
----
-
-## 14. Output Path Rule
-
-M2-6 output paths are:
+## 4. Required Outputs
 
 ```text
 dist/context/{project_code}/{agent_code}/context-pack.md
@@ -295,53 +56,137 @@ dist/context/{project_code}/{agent_code}/build-report.md
 dist/context/{project_code}/{agent_code}/context-preview.md
 ```
 
-Timestamped filenames may be introduced later, but M2-6 draft keeps the M2-5 fixed filename style for continuity.
+## 5. Agent Context Coverage
 
----
+### 5.1 Definition
 
-## 15. Review Decision Rule
+Agent Context Coverageは、Agent Registryの`required_context` selectorに一致するincluded sourceが存在するかを判定する。
 
-Context Preview ends with a human review decision block.
+照合対象は次のとおり。
 
-```md
-## 13. Review Decision
+- `source_type`
+- `source_group`
+- `document_names`
+- `paths`
 
-| Item | Value |
+### 5.2 Coverage and Evidence Quality Separation
+
+Context CoverageとEvidence Qualityを混同してはならない。
+
+| Axis | Question |
 |---|---|
-| Human Reviewed | no |
-| Approved for AI Input | pending |
-| Reviewer |  |
-| Reviewed At |  |
-| Notes |  |
+| Context Coverage | Agentが要求した種類のContextが提供されているか |
+| Evidence Quality | 一致sourceを確定根拠として利用できるか |
+
+selectorに一致するdraft sourceが存在する場合、Coverageは`covered`とする。draftであることはWarning、Source Status Mix、Non-Final Evidence Countで別途示す。
+
+### 5.3 Coverage Status
+
+| Status | Meaning |
+|---|---|
+| `covered` | selectorに一致するincluded sourceが1件以上存在する |
+| `missing` | selectorに一致するincluded sourceが存在しない |
+| `partial` | 複数必須要素または将来の`min_items`要件の一部のみ満たす場合に使用する。source statusを理由に使用しない |
+| `unknown` | Agent Registryの`required_context`がPreview Serviceへ渡されていない |
+| `not_applicable` | Agentに`required_context`が定義されていない |
+
+## 6. Source Evidence Quality
+
+次のstatusはnon-final evidenceとして扱う。
+
+- `draft`
+- `proposed`
+- `archived`
+- `deprecated`
+- `superseded`
+- `unknown`
+
+non-final evidenceを含めてもCoverageは自動的に`partial`へ変更しない。人間レビューを要求し、確定根拠として扱わない。
+
+## 7. Warning Summary
+
+Warning Summaryは最低限次を含む。
+
+| Field | Required |
+|---|:---:|
+| Code | yes |
+| Severity | yes |
+| Source ID | yes |
+| Path | yes |
+| Message | yes |
+| Handling | yes |
+
+Handlingは、利用者が次に行うべき確認または修正を示す。
+
+## 8. Token Budget
+
+Token Estimateは次を出力する。
+
+| Field | Description |
+|---|---|
+| Estimated Input Tokens | source excerpt文字数÷4による概算値 |
+| Max Tokens | requestまたはdefaultの全体上限 |
+| Reserve Tokens For Response | 応答用に予約するtoken数 |
+| Available Input Tokens | `maxTokens - reserveTokensForResponse` |
+| Exceeded | estimated inputがavailable inputを超えたか |
+| Handling | none / summarized / excluded / failed |
+| Approximate | tokenizerによる厳密値でないことを示す |
+
+超過判定は`maxTokens`ではなく`availableInputTokens`に対して行う。
+
+## 9. Traceability
+
+Traceabilityは固定値を出力してはならない。生成時の実データを照合して判定する。
+
+| Check | Rule |
+|---|---|
+| Source IDs in Context Pack | Build Reportのincluded source IDがContext Pack本文に存在するか |
+| Source IDs in Build Report | Preview対象source IDがBuild Report本文に存在するか |
+| Warning Codes in Build Report | Preview対象warning codeがBuild Report本文に存在するか |
+
+結果値は`yes`、`no (missing: ...)`、`not_applicable`、`not_verified`のいずれかとする。
+
+## 10. Review Recommendation
+
+判定は次の優先順で行う。
+
+| Recommendation | Condition |
+|---|---|
+| `blocked_errors_present` | errorが1件以上、またはgeneration resultがfailed |
+| `blocked_required_docs_missing` | 標準required memory docsが不足 |
+| `review_required_context_missing` | required contextに`missing`または`unknown`が存在 |
+| `review_required_warnings_present` | error・required doc不足・context不足はないがwarningが存在 |
+| `ready_for_human_review` | 上記に該当しない |
+
+RecommendationはAI投入の自動承認ではない。
+
+## 11. Human Review Decision
+
+生成時の初期値は次とする。
+
+```text
+Human Reviewed: no
+Approved for AI Input: pending
 ```
 
-Context Preview must not mark itself as approved automatically.
+自動生成処理は`Approved for AI Input: yes`を設定してはならない。
 
----
+## 12. Active Acceptance Criteria
 
-## 16. Draft Definition of Done
+- [x] Context PackとPreviewの責務差分が定義されている。
+- [x] Previewにsource list、warnings、token estimate、coverageが含まれる。
+- [x] Active / draft / archived等の混在を確認できる。
+- [x] Agent要求Contextの充足状況を構造的に確認できる。
+- [x] Context CoverageとEvidence Qualityが分離されている。
+- [x] response reserveと実効入力budgetが出力される。
+- [x] Warning SummaryにHandlingが含まれる。
+- [x] Traceabilityが実データ照合で判定される。
+- [x] Review Recommendationの値と判定優先順が定義されている。
+- [x] Previewは人間承認前に`pending`を維持する。
 
-M2-6 draft is complete when:
+## 13. Revision History
 
-- [ ] Context PackとPreviewの差分が定義されている。
-- [ ] Previewにsource list、warnings、token estimate、coverageが含まれる。
-- [ ] Active / draft / archived sourceの混在状況を確認できる。
-- [ ] Agent要求Contextの充足状況を確認できる。
-- [ ] Context Pack本文とBuild Reportの対応をtraceできる。
-- [ ] Context不足や競合候補がwarningとして確認できる。
-- [ ] `contextPreviewService.ts` がPreview Markdownを生成できる。
-- [ ] `dist/context/{project_code}/{agent_code}/context-preview.md` が出力される。
-
----
-
-## 17. Review Notes for Active化
-
-Active化前に確認すべき論点:
-
-| ID | Topic | Draft Position |
-|---|---|---|
-| M2-6-REV-CAND-001 | Template配置 | M2-1に合わせ、正式配置は `docs/templates/context/` とする。 |
-| M2-6-REV-CAND-002 | Coverage算出 | M2-6では構造的matchingのみ。semantic判定はPhase 3以降。 |
-| M2-6-REV-CAND-003 | Token estimate | M2-5のchar/4近似を継続。厳密tokenizerは対象外。 |
-| M2-6-REV-CAND-004 | Preview承認欄 | 自動承認しない。人間review用の空欄を出す。 |
-| M2-6-REV-CAND-005 | Build Reportとの重複 | Build Reportは詳細、Previewは判断用サマリーに分離する。 |
+| Version | Date | Status | Summary |
+|---|---|---|---|
+| 0.1.0 | 2026-06-10 | draft | M2-6初期ドラフト |
+| 1.0.0 | 2026-06-11 | active | M2-6-REV-P0-001およびP1-001〜004を反映 |

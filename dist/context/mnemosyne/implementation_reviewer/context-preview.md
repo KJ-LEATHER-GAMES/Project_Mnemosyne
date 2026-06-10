@@ -11,7 +11,7 @@
 
 | Item | Value |
 | --- | --- |
-| Generated At | 2026-06-10T20:39:43.409Z |
+| Generated At | 2026-06-10T21:11:08.268Z |
 | Project Code | mnemosyne |
 | Project Name | Project Mnemosyne |
 | Agent Code | implementation_reviewer |
@@ -19,8 +19,8 @@
 | Task Request | M2-6 context preview integration check |
 | Output Type | implementation_review_report |
 | Build Mode | standard |
-| Generation Result | warning |
-| Review Recommendation | review_required_warnings_present |
+| Generation Result | success |
+| Review Recommendation | ready_for_human_review |
 
 ---
 
@@ -30,11 +30,11 @@
 | --- | --- | --- |
 | No build errors | ok | 0 error(s) |
 | Required memory docs exist | ok | 0 missing required doc(s) |
-| Agent required context is covered | review | 1 incomplete required context item(s) |
+| Agent required context is covered | ok | 0 incomplete required context item(s) |
 | No conflict warnings | ok | 0 conflict warning(s) |
-| Non-final evidence is acceptable | review | 1 non-final evidence source(s) included |
-| Token estimate is within budget | ok | estimated=9632, max=24000 |
-| Context Pack and Build Report paths are traceable | ok | source_id and warning code are shared |
+| Non-final evidence is acceptable | ok | 0 non-final evidence source(s) included |
+| Token estimate is within budget | ok | estimated=9383, available=20000, max=24000, reserve=4000 |
+| Context Pack and Build Report paths are traceable | ok | contextPack=yes; buildReportSources=yes; buildReportWarnings=not_applicable |
 
 ---
 
@@ -43,7 +43,7 @@
 | Item | Value |
 | --- | --- |
 | OK | true |
-| Warning Count | 1 |
+| Warning Count | 0 |
 | Error Count | 0 |
 | Conflict Count | 0 |
 | Missing Required Source Count | 0 |
@@ -62,9 +62,7 @@
 
 ## 5. Warning Summary
 
-| Code | Severity | Source ID | Path | Message |
-| --- | --- | --- | --- | --- |
-| draft_source_included | warning | src-008-build-report-rule-md | docs/context/build-report-rule.md | Non-active source included with warning: docs/context/build-report-rule.md status=draft |
+No warnings.
 
 ---
 
@@ -72,9 +70,9 @@
 
 | Status | Included Count | Excluded Count | Review Note |
 | --- | --- | --- | --- |
-| active | 7 | 0 | normal evidence |
+| active | 8 | 0 | normal evidence |
 | accepted | 0 | 0 | none included |
-| draft | 1 | 0 | human review required; do not treat as final evidence |
+| draft | 0 | 0 | none included |
 | proposed | 0 | 0 | none included |
 | archived | 0 | 0 | none included |
 | deprecated | 0 | 0 | none included |
@@ -89,7 +87,7 @@
 | --- | --- | --- | --- |
 | active_decisions | covered | src-001-active-decisions-md | Matched by Agent Registry requirement selectors. Selectors: source_type=memory_doc; document_names=active-decisions.md. Purpose: 実装が従うべき設計判断と制約を確認する |
 | project_summary | covered | src-002-project-summary-md | Matched by Agent Registry requirement selectors. Selectors: source_type=memory_doc; document_names=project-summary.md. Purpose: 対象Projectの目的と主要構成を把握する |
-| task_additional_sources | partial | src-008-build-report-rule-md | Matched, but at least one source is warning/reference/summarized or non-final evidence. Selectors: source_type=additional_source. Purpose: ユーザーが明示したコード、ログ、設計文書をレビュー対象として扱う |
+| task_additional_sources | covered | src-008-build-report-rule-md | Matched by Agent Registry requirement selectors. Selectors: source_type=additional_source. Purpose: ユーザーが明示したコード、ログ、設計文書をレビュー対象として扱う |
 
 ---
 
@@ -99,11 +97,11 @@
 | --- | --- |
 | Included Source Count | 8 |
 | Excluded Source Count | 0 |
-| Warning Source Count | 1 |
+| Warning Source Count | 0 |
 | Required Doc Count | 5 |
 | Missing Required Doc Count | 0 |
-| Active or Accepted Source Count | 7 |
-| Non-Final Evidence Source Count | 1 |
+| Active or Accepted Source Count | 8 |
+| Non-Final Evidence Source Count | 0 |
 
 ---
 
@@ -111,9 +109,10 @@
 
 | Item | Value |
 | --- | --- |
-| Estimated Input Tokens | 9632 |
+| Estimated Input Tokens | 9383 |
 | Max Tokens | 24000 |
-| Reserve Tokens For Response | not available in ContextBuildReport |
+| Reserve Tokens For Response | 4000 |
+| Available Input Tokens | 20000 |
 | Exceeded | false |
 | Handling | none |
 | Approximate | true |
@@ -130,7 +129,7 @@
 | Context Preview Path | dist\context\mnemosyne\implementation_reviewer\context-preview.md |
 | Source ID Shared With Context Pack | yes |
 | Source ID Shared With Build Report | yes |
-| Warning Code Shared With Build Report | yes |
+| Warning Code Shared With Build Report | not_applicable |
 
 ---
 
@@ -145,7 +144,7 @@
 | src-005-ADR-003-human-approved-memory-update-md | docs/adr/ADR-003-human-approved-memory-update.md | active | adr_source | 6. Active Decisions | include | アーキテクチャ判断や依存方向の根拠を確認する |
 | src-006-ADR-004-project-independent-memory-template-md | docs/adr/ADR-004-project-independent-memory-template.md | active | adr_source | 6. Active Decisions | include | アーキテクチャ判断や依存方向の根拠を確認する |
 | src-007-ADR-005-agent-context-separation-md | docs/adr/ADR-005-agent-context-separation.md | active | adr_source | 6. Active Decisions | include | アーキテクチャ判断や依存方向の根拠を確認する |
-| src-008-build-report-rule-md | docs/context/build-report-rule.md | draft | additional_source | 11. Additional Sources | include_with_warning | Explicitly supplied additional source. |
+| src-008-build-report-rule-md | docs/context/build-report-rule.md | active | additional_source | 11. Additional Sources | include | Explicitly supplied additional source. |
 
 ---
 
