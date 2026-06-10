@@ -34,6 +34,7 @@ async function main(): Promise<void> {
 
   console.log(`Context Pack generated: ${result.contextPackPath}`);
   console.log(`Build Report generated: ${result.buildReportPath}`);
+  console.log(`Context Preview generated: ${result.contextPreviewPath}`);
   console.log(`Included sources: ${result.report.includedSources.length}`);
   console.log(`Excluded sources: ${result.report.excludedSources.length}`);
   console.log(`Warnings: ${result.report.warnings.length}`);
@@ -128,6 +129,8 @@ function renderHelp(): string {
   return [
     "Mnemosyne Context Builder CLI",
     "",
+    "Generates Context Pack, Build Report, and Context Preview.",
+    "",
     "Usage:",
     "  npm run context:build -- --project <project_code> --agent <agent_code> --task <task_request>",
     "  npm run context:build -- --request <context-build-request.yaml>",
@@ -147,6 +150,11 @@ function renderHelp(): string {
     "  --build-mode <mode>                 minimal / standard / full / debug.",
     "  --request <path>                    Load Context Build Request YAML.",
     "  --help, -h                          Show this help.",
+    "",
+    "Outputs:",
+    "  dist/context/{project_code}/{agent_code}/context-pack.md",
+    "  dist/context/{project_code}/{agent_code}/build-report.md",
+    "  dist/context/{project_code}/{agent_code}/context-preview.md",
     "",
     "Examples:",
     '  npm run context:build -- --project ats --agent implementation_reviewer --task "reward request usecase review"',

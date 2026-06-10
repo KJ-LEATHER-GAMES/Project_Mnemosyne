@@ -12,7 +12,7 @@
 | Output Contract ID | implementation_review_report |
 | Build Mode | standard |
 | Source Status Policy | active_preferred |
-| Included Source Count | 7 |
+| Included Source Count | 8 |
 | Excluded Source Count | 0 |
 | Warning Count | 0 |
 | Error Count | 0 |
@@ -34,7 +34,7 @@
 | next-actions.md | C:/Users/monsi/OneDrive/Apps/remotely-save/Project_Mnemosyne/docs/projects/mnemosyne/memory/next-actions.md | true |
 | ai-entrypoint.md | C:/Users/monsi/OneDrive/Apps/remotely-save/Project_Mnemosyne/docs/projects/mnemosyne/memory/ai-entrypoint.md | true |
 
-## 3. Unsupported / Placeholder Features
+## 3. Known Limitations / Unsupported Features
 
 - Recent Context loader is a placeholder. Conversation Summary files are not loaded yet.
 - Semantic conflict detection is not implemented. Only structural warnings are generated.
@@ -59,6 +59,7 @@ None.
 | src-005-ADR-003-human-approved-memory-update-md | docs/adr/ADR-003-human-approved-memory-update.md | docs/adr/ADR-003-human-approved-memory-update.md | ADR-003: Human-Approved Memory Update | active | adr_source | 6. Active Decisions | agent_optional_context | include | mnemosyne_adrs | false | Matched Project Registry source group: mnemosyne_adrs. |
 | src-006-ADR-004-project-independent-memory-template-md | docs/adr/ADR-004-project-independent-memory-template.md | docs/adr/ADR-004-project-independent-memory-template.md | ADR-004: Project-Independent Memory Template | active | adr_source | 6. Active Decisions | agent_optional_context | include | mnemosyne_adrs | false | Matched Project Registry source group: mnemosyne_adrs. |
 | src-007-ADR-005-agent-context-separation-md | docs/adr/ADR-005-agent-context-separation.md | docs/adr/ADR-005-agent-context-separation.md | ADR-005: Agent and Project Context Separation | active | adr_source | 6. Active Decisions | agent_optional_context | include | mnemosyne_adrs | false | Matched Project Registry source group: mnemosyne_adrs. |
+| src-008-build-report-rule-md | docs/context/build-report-rule.md | docs/context/build-report-rule.md | Build Report and Context Preview Rule | active | additional_source | 11. Additional Sources | additional_source | include | additional_source | true | Explicitly requested by additional_sources or --source. |
 
 ## 7. Excluded Sources
 
@@ -68,7 +69,7 @@ None.
 
 | Item | Value |
 | --- | --- |
-| Estimated Input Tokens | 9883 (approximate) |
+| Estimated Input Tokens | 9632 (approximate) |
 | Estimate Method | Approximate estimate using source excerpt character count / 4. Not tokenizer-based. |
 | Max Tokens | 24000 |
 | Exceeded | false |

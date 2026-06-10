@@ -9,12 +9,12 @@
 | Item | Value |
 | --- | --- |
 | Context Pack Version | 1.0.0 |
-| Generated At | 2026-06-10T13:09:49.930Z |
+| Generated At | 2026-06-10T20:31:51.183Z |
 | Project Code | mnemosyne |
 | Project Name | Project Mnemosyne |
 | Agent Code | implementation_reviewer |
 | Agent Name | 実装レビューAgent |
-| Task Request | context builder implementation review |
+| Task Request | M2-6 context preview integration check |
 | Output Type | implementation_review_report |
 | Build Mode | standard |
 | Source Status Policy | active_preferred |
@@ -117,163 +117,77 @@ document_role: "project_memory"
 memory_type: "project_summary"
 project_code: "mnemosyne"
 status: "active"
-version: "1.0.0"
+version: "1.1.0"
 created_at: "2026-06-05"
-updated_at: "2026-06-05"
-phase: "Phase 1: Memory Foundation"
-milestone: "M1-4: Mnemosyne初期記憶作成"
+updated_at: "2026-06-10"
+phase: "Phase 2: Context Forge"
+milestone: "M2-5: Context Builder初期実装"
+owner: "Project Mnemosyne"
 related_documents:
-  - "docs/phases/phase-1-memory-foundation.md"
-  - "docs/requirements/overall-requirements.md"
-  - "docs/memory/memory-policy.md"
-  - "docs/memory/memory-taxonomy.md"
-  - "docs/memory/context-source-priority.md"
   - "docs/projects/mnemosyne/memory/current-status.md"
   - "docs/projects/mnemosyne/memory/active-decisions.md"
   - "docs/projects/mnemosyne/memory/next-actions.md"
   - "docs/projects/mnemosyne/memory/ai-entrypoint.md"
+  - "docs/review/m2-5-context-builder-active-review.md"
 ---
 
 # Project Summary
 
-## Project Metadata
+## 1. Project Identity
 
-| Field | Value |
+| Item | Value |
 |---|---|
-| project_code | `mnemosyne` |
-| project_name | Project Mnemosyne |
-| project_status | active |
-| project_type | platform |
-| owner | 個人開発者 |
-| started_at | 2026-05-27 |
-| repository_or_workspace | `project-mnemosyne/` |
-| memory_root | `docs/projects/mnemosyne/memory/` |
+| Project Name | Project Mnemosyne |
+| Project Code | `mnemosyne` |
+| Theme | AI外部記憶基盤を作る |
+| Current Phase | Phase 2: Context Forge |
+| Current Milestone | M2-5: Context Builder初期実装 |
+| Primary User | 個人開発者 |
+| Primary Use Case | AI作業に必要なProject / Agent / Task Contextを再利用可能なMarkdown Context Packとして生成する |
 
-## Purpose
+## 2. Purpose
 
-Project Mnemosyneは、AIとの会話、設計判断、タスク、記事メモ、ドキュメント更新案を外部記憶として整理し、AIが必要な文脈を再利用できるようにするための個人開発向けAI外部記憶基盤である。
+Project Mnemosyneは、AIチャットに依存して散らばりやすい前提・判断・タスク・検証結果を、Markdown正本として管理し、必要な文脈をAIへ安全に渡すための外部記憶基盤である。
 
-本プロジェクトの目的は、AIにすべてを覚えさせることではない。
+Phase 2では、Project Registry、Agent Registry、Context Build Requestをもとに、Context Packを生成する仕組みを整備する。
 
-GitHub docs、ADR、Notion、PostgreSQL、Context Pack、RAG、MCP、Agentなどを段階的に組み合わせ、AIが参照できる正本・副本・生成物の境界を明確にした記憶基盤を構築することを目的とする。
+## 3. Current Architecture Summary
 
-## Relationship with AI Entrypoint
+| Layer | Current Artifact |
+|---|---|
+| Project Registry | `config/projects.yaml` / `src/services/projectRegistryService.ts` |
+| Agent Registry | `config/agents.yaml` / `src/services/agentRegistryService.ts` |
+| Context Build Request | request YAML / CLI args |
+| Context Builder | `src/cli/context-build.ts` / `src/services/contextBuilderService.ts` |
+| Source Resolution | `src/services/sourceResolverService.ts` |
+| Build Report | `src/services/buildReportService.ts` |
+| Generated Output | `dist/context/{project_code}/{agent_code}/context-pack.md` / `build-report.md` |
 
-本書はProject Mnemosyneの目的、背景、Scope、Stable Factsの正本である。
+## 4. Source of Truth Boundary
 
-`docs/projects/mnemosyne/memory/ai-entrypoint.md` はAI支援開始時の入口であり、Project概要を最小要約として再掲する。詳細なProject概要を確認する場合は、本書を正本として扱う。
+Context PackとBuild Reportは生成物であり、正本ではない。
 
-## Background
+正本は以下を優先する。
 
-AIとの開発相談では、会話が長くなるほど以下の課題が発生する。
+1. Active ADR
+2. Active memory / context / phase / requirement documents
+3. Project Registry / Agent Registry
+4. Human-approved project memory documents
+5. Generated Context Pack / Build Report
 
-- 毎回プロジェクトの前提説明が必要になる
-- 過去の設計判断が会話ログに埋もれる
-- 決定事項、未決事項、タスク、アイデアが混在する
-- AIが古い情報や仮説を確定事項として扱う
-- ChatGPT / Cursor / Claude などAIクライアント間で文脈が分断される
-- 会話ログが設計資産として残らない
-- プロジェクト横断で専門Agentを再利用しづらい
+## 5. Current Completion Point
 
-Project Mnemosyneは、これらの課題に対して、会話を流さず、再利用可能な設計資産へ変換するための外部記憶構造を提供する。
+M2-5: Context Builder初期実装は、更新版ドラフトの検証によりActive化可能と判断された。
 
-## Target Users / Stakeholders
+主な確認済み事項は以下。
 
-| Stakeholder | Role / Need | Relationship to Project |
-|---|---|---|
-| 個人開発者 | 複数プロジェクトの設計判断、タスク、文脈を継続的に扱いたい | primary_user |
-| AI Assistant | 正本に基づいて、古い情報や未決定案を混同せず支援する | operator |
-| ChatGPT / Cursor / Claude などのAIクライアント | 共通のProject Contextを参照して作業を継続する | affected_party |
-| ATSなどの適用対象プロジェクト | 記憶構造とContext生成の検証対象となる | validation_target |
+- `npm run check` 成功
+- `--help` / `-h` 成功
+- ATS / Mnemosyne Context Pack生成成功
+- active source metadata解決成功
+- draft source warning code `draft_source_included` 確認済み
+- test fixtureを `docs/review` から `tests/fixtures/context-builder` へ分離済み
 
-## Core Concepts
-
-| Concept | Definition in This Project | Note |
-|---|---|---|
-| External Memory | AIが参照できるように整理されたプロジェクト記憶 | AI内部の記憶ではなく、外部に管理する |
-| Source of Truth | 判断・設計・状態の正本となる情報源 | Markdown docs / ADRを初期正本とする |
-| Project Context | プロジェクト固有の目的、状態、判断、次アクション | Agent共通定義とは分離する |
-| Agent Context | 役割ベースのAI支援に必要な共通ルール | ADR Agent、Docs Agent、Review Agentなど |
-| Context Pack | AIへ渡すために正本から組み立てた文脈 | 生成物であり正本ではない |
-| Conversation Summary | 会話ログを再利用可能な記憶候補へ変換したもの | そのままActive Decisionにはしない |
-| Conflict Issue | 正本間の競合を検知・記録・解消するためのIssue | current-status.mdから参照する |
-
-## Scope
-
-- プロジェクト概要の整理
-- 現在状況の管理
-- 設計判断のADR化
-- タスク、Issue、Ideaの分類
-- 会話ログの要約と記憶化
-- AIに渡すContext Pack生成
-- 将来的なRAG検索
-- 将来的なMemory API / MCP連携
-- 汎用専門Agentの設計
-- 複数プロジェクトへ適用可能な記憶テンプレートの整備
-
-## Out of Scope
-
-Phase 1時点では以下を対象外とする。
-
-- RAG検索の実装
-- Memory APIの実装
-- MCP Serverの実装
-- UIの実装
-- PostgreSQLによる構造化記憶DBの実装
-- Vector Store / pgvectorの実装
-- AIによる正本文書への直接write
-- Agentの本格実装
-- 完全自動の会話要約・Decision抽出・Task登録
-
-## Stable Facts
-
-| Fact ID | Fact | Source Path | As Of | Status | Note |
-|---|---|---|---|---|---|
-| MNEMO-FACT-001 | Project Mnemosyneは、AI外部記憶基盤を作るプロジェクトである。 | `docs/requirements/overall-requirements.md` | 2026-06-05 | active | プロジェクトの根本目的 |
-| MNEMO-FACT-002 | Phase 1の名称はMemory Foundationであり、記憶構造と運用ルールを定義する。 | `docs/phases/phase-1-memory-foundation.md` | 2026-06-05 | active | 現在の作業Phase |
-| MNEMO-FACT-003 | Phase 1の検証対象はMnemosyne自身とATSである。 | `docs/phases/phase-1-memory-foundation.md` | 2026-06-05 | active | M1-4 / M1-5の対象 |
-| MNEMO-FACT-004 | M1-4ではMnemosyne自身の初期記憶として5文書を作成する。 | `docs/phases/phase-1-memory-foundation.md` | 2026-06-05 | active | 本タスクの成果物 |
-| MNEMO-FACT-005 | M1-3でMemory Template 6文書がActive化済みである。 | `docs/review/m1-3-template-activation-record.md` | 2026-06-05 | active | M1-4の入力 |
-
-## Source of Truth
-
-| Information Category | Authoritative Source | Role |
-|---|---|---|
-| プロジェクト目的・安定した範囲・Stable Fact | `docs/projects/mnemosyne/memory/project-summary.md` | Project概要の正本 |
-| 現在地・Issue・Conflict Issue参照 | `docs/projects/mnemosyne/memory/current-status.md` | 状態の正本 |
-| 現在有効なDecision / Constraint | `docs/projects/mnemosyne/memory/active-decisions.md` および関連ADR | 判断・制約の正本 |
-| 直近Task | `docs/projects/mnemosyne/memory/next-actions.md` | Taskの正本 |
-| AI参照入口 | `docs/projects/mnemosyne/memory/ai-entrypoint.md` | 参照ルートの入口 |
-| 共通Memory運用ルール | `docs/memory/memory-policy.md` | 正本・副本・更新権限の正本 |
-| Memory分類・状態定義 | `docs/memory/memory-taxonomy.md` | memory_type / statusの正本 |
-| Context参照優先順位 | `docs/memory/context-source-priority.md` | 競合時の参照優先順位の正本 |
-| 重要設計判断 | `docs/adr/ADR-*.md` | 判断理由と採用背景の正本 |
-
-## Related Projects
-
-| Project Code | Relationship | Shared Context / Boundary | Reference Path |
-|---|---|---|---|
-| ats | validation_target | Memory TemplateとContext設計の実プロジェクト適用検証対象 | `docs/projects/ats/memory/` |
-| note / content projects | future_candidate | 記事メモや発信活動の外部記憶化候補 | none |
-| work-improvement | future_candidate | 業務改善ナレッジの外部記憶化候補 | none |
-
-## References
-
-- `docs/phases/phase-1-memory-foundation.md`
-- `docs/requirements/overall-requirements.md`
-- `docs/memory/memory-policy.md`
-- `docs/memory/memory-taxonomy.md`
-- `docs/memory/context-source-priority.md`
-- `docs/adr/ADR-001-docs-as-source-of-memory.md`
-- `docs/adr/ADR-002-memory-source-of-truth-boundary.md`
-- `docs/adr/ADR-003-human-approved-memory-update.md`
-
-## Change History
-
-| Version | Date | Status | Change Summary | Approved By |
-|---|---|---|---|---|
-| 0.1.0 | 2026-06-05 | draft | M1-4 Mnemosyne初期記憶作成として初版ドラフトを作成。 | pending |
-| 1.0.0 | 2026-06-05 | active | M1-4 Active化レビューのP1-004を反映し、ai-entrypointとの概要重複の意図を明記してActive化。 | user |
 
 ```
 
@@ -308,99 +222,62 @@ document_role: "project_memory"
 memory_type: "active_decisions"
 project_code: "mnemosyne"
 status: "active"
-version: "1.0.0"
+version: "1.1.0"
 created_at: "2026-06-05"
-updated_at: "2026-06-05"
-phase: "Phase 1: Memory Foundation"
-milestone: "M1-4: Mnemosyne初期記憶作成"
+updated_at: "2026-06-10"
+phase: "Phase 2: Context Forge"
+milestone: "M2-5: Context Builder初期実装"
+owner: "Project Mnemosyne"
 related_documents:
   - "docs/projects/mnemosyne/memory/project-summary.md"
   - "docs/projects/mnemosyne/memory/current-status.md"
   - "docs/projects/mnemosyne/memory/next-actions.md"
-  - "docs/projects/mnemosyne/memory/ai-entrypoint.md"
-  - "docs/phases/phase-1-memory-foundation.md"
-  - "docs/memory/memory-policy.md"
-  - "docs/memory/memory-taxonomy.md"
-  - "docs/memory/context-source-priority.md"
-  - "docs/adr/ADR-001-docs-as-source-of-memory.md"
-  - "docs/adr/ADR-002-memory-source-of-truth-boundary.md"
-  - "docs/adr/ADR-003-human-approved-memory-update.md"
+  - "docs/review/m2-5-context-builder-active-review.md"
 ---
 
 # Active Decisions
 
-## Decision Register Metadata
+## 1. Source of Truth Boundary
 
-| Field | Value |
+Context PackとBuild Reportは生成物であり、正本ではない。
+
+AI作業でContext Pack内の情報とActive sourceが競合した場合、Active sourceを優先する。
+
+## 2. M2-5 Active Decisions
+
+| Decision ID | Decision | Rationale | Status |
+|---|---|---|---|
+| M2-5-DEC-001 | Context Builder CLIをPhase 2の中核成果物として採用する | Project / Agent / Taskに応じた文脈生成を自動化するため | active |
+| M2-5-DEC-002 | `required_memory_docs` は存在検証対象であり、常時全文投入対象ではない | Project Registry方針とSource Status Policyに合わせるため | active |
+| M2-5-DEC-003 | source statusはfrontmatterから抽出し、`active` / `accepted` を通常採用する | Active正本をwarning扱いしないため | active |
+| M2-5-DEC-004 | draft等の非active sourceを明示指定で含める場合はstatus別warning codeを出す | 後続レビューや自動判定を安定させるため | active |
+| M2-5-DEC-005 | test fixtureは `docs/review` ではなく `tests/fixtures/context-builder` に置く | 正規review source候補への混入を防ぐため | active |
+| M2-5-DEC-006 | `dist/context/**` は生成物であり、正本として統合しない | Context Packを正本扱いしないため | active |
+| M2-5-DEC-007 | ESLint / Prettier / TypeScript checkをM2-5品質ゲートに含める | 実装成果物として最低限の品質を保証するため | active |
+
+## 3. Warning Code Policy
+
+| Source Status | Included Explicitly | Warning Code |
+|---|---:|---|
+| `active` | yes / default | none |
+| `accepted` | yes / default | none |
+| `draft` | yes | `draft_source_included` |
+| `proposed` | yes | `proposed_source_included` |
+| `archived` | yes | `archived_source_included` |
+| `deprecated` | yes | `deprecated_source_included` |
+| `superseded` | yes | `superseded_source_included` |
+| `unknown` | conditional | `unknown_status` |
+
+## 4. Accepted Limitations
+
+| Limitation | Decision |
 |---|---|
-| project_code | `mnemosyne` |
-| as_of | 2026-06-05 |
-| decision_owner | 個人開発者 |
-| decision_source_root | `docs/adr/` / `docs/memory/` / `docs/phases/` |
-| conflict_reference_document | `docs/projects/mnemosyne/memory/current-status.md` |
+| Recent Context loader | M2-5ではplaceholderとして扱う |
+| Semantic conflict detection | M2-5では未実装として明記する |
+| Token estimate | approximateとして扱う |
+| BOM warning | 読込時BOM吸収は実施。Build Report warning化は後続改善候補 |
 
-## Core Active Decisions for M1-4
 
-| Decision ID | Decision | Reason / Intent | Applicability Scope | Related ADR | Source Path | Status | Effective At | Updated At | Supersedes |
-|---|---|---|---|---|---|---|---|---|---|
-| MD-001 | Mnemosyneは複数プロジェクト向けの外部記憶基盤である | ATS専用ではなく、複数プロジェクトの文脈をAIに再利用させるため | project | none | `docs/phases/phase-1-memory-foundation.md` | active | 2026-06-05 | 2026-06-05 | none |
-| MD-002 | Phase 1では自動化より先に記憶構造を定義する | RAG / API / MCP / UI / Agent実装へ進む前に、正本構造と運用ルールを固定するため | phase | none | `docs/phases/phase-1-memory-foundation.md` | active | 2026-06-05 | 2026-06-05 | none |
-| MD-003 | Markdown docs と ADR を初期の正本とする | Phase 1では人間が読みやすく、Git管理しやすい正本を優先するため | phase | `docs/adr/ADR-001-docs-as-source-of-memory.md` / `docs/adr/ADR-002-memory-source-of-truth-boundary.md` | `docs/memory/memory-policy.md` | active | 2026-06-05 | 2026-06-05 | none |
-| MD-004 | AIは更新草案を作成できるが、正本反映は人間承認後とする | AIによる誤更新、未決定案の確定扱い、正本破壊を防ぐため | project | `docs/adr/ADR-003-human-approved-memory-update.md` | `docs/memory/memory-policy.md` | active | 2026-06-05 | 2026-06-05 | none |
-| MD-005 | 専門Agent定義とProject Contextを分離する | ADR Agent、Docs Agent、Review Agentなどを複数プロジェクトで再利用できるようにするため | project / future_phase | none | `docs/phases/phase-1-memory-foundation.md` | active | 2026-06-05 | 2026-06-05 | none |
-| MD-006 | Phase 1の検証対象としてATSを使用する | テンプレートが抽象論ではなく、実際の複雑なプロジェクトへ適用可能か検証するため | phase | none | `docs/phases/phase-1-memory-foundation.md` | active | 2026-06-05 | 2026-06-05 | none |
-
-## Supporting Operational Decisions
-
-| Decision ID | Decision | Reason / Intent | Applicability Scope | Related ADR | Source Path | Status | Effective At | Updated At | Supersedes |
-|---|---|---|---|---|---|---|---|---|---|
-| MD-007 | Context Packは正本ではなく生成物として扱う | AIへ渡す加工済み文脈であり、判断・状態・タスクの正本ではないため | project | `docs/adr/ADR-002-memory-source-of-truth-boundary.md` | `docs/memory/context-source-priority.md` | active | 2026-06-05 | 2026-06-05 | none |
-| MD-008 | Conversation Summaryは会話の整理記録であり、単独ではActive Decision / Constraintの根拠にしない | 会話要約には未決定案や仮説が含まれる可能性があるため | project | `docs/adr/ADR-003-human-approved-memory-update.md` | `docs/memory/memory-taxonomy.md` | active | 2026-06-05 | 2026-06-05 | none |
-| MD-009 | Active正本間の競合Issue一覧はcurrent-status.mdに一本化する | active-decisions.mdとの重複管理を避け、競合中scopeを明確に扱うため | project_memory | none | `docs/templates/memory/current-status.template.md` | active | 2026-06-05 | 2026-06-05 | none |
-
-## Active Constraints
-
-| Constraint ID | Constraint | Applicability Scope | Source Decision / ADR | Source Path | Status | Updated At |
-|---|---|---|---|---|---|---|
-| MNEMO-CON-001 | AIは正本文書へ直接writeしない。新規文書案・修正案・差分案をdraftとして提示する。 | all docs / all AI support | MD-004 | `docs/memory/memory-policy.md` | active | 2026-06-05 |
-| MNEMO-CON-002 | Phase 1ではRAG / API / MCP / UI / Agent実装を対象外とする。 | Phase 1 | MD-002 | `docs/phases/phase-1-memory-foundation.md` | active | 2026-06-05 |
-| MNEMO-CON-003 | 未決定事項、候補案、未反映Conversation SummaryをActive Decisionとして扱わない。 | memory operation | MD-008 | `docs/memory/memory-taxonomy.md` | active | 2026-06-05 |
-| MNEMO-CON-004 | Context Pack、Search Result Context、AI Draftは生成物であり、正本として扱わない。 | context generation / AI support | MD-007 | `docs/memory/context-source-priority.md` | active | 2026-06-05 |
-| MNEMO-CON-005 | Active正本間に競合がある場合、Conflict Issueでblocked_scopeを管理し、解消まで確定Contextとして扱わない。 | conflict handling | MD-009 | `docs/memory/context-source-priority.md` | active | 2026-06-05 |
-| MNEMO-CON-006 | Task本文・完了条件の正本はnext-actions.mdとし、current-status.mdには状態要約のみを記載する。 | project_memory | MD-009 | `docs/templates/memory/next-actions.template.md` | active | 2026-06-05 |
-| MNEMO-CON-007 | Constraint本文の正本はactive-decisions.mdまたは共通Policy / ADRとし、ai-entrypoint.mdでは参照中心にする。 | project_memory / AI entrypoint | MD-009 | `docs/templates/memory/ai-entrypoint.template.md` | active | 2026-06-05 |
-
-## Superseded Decisions
-
-| Old Decision ID | Old Decision | Replaced By | Replacement Reason | Superseded At | Historical Source Path |
-|---|---|---|---|---|---|
-| none | none | none | none | none | none |
-
-## Deprecated Decisions
-
-| Decision ID | Deprecated Decision | Reason Not to Use | Deprecated At | Source Path |
-|---|---|---|---|---|
-| none | none | none | none | none |
-
-## Conflict Reference
-
-Active正本間競合が存在する場合、本書へ競合内容を複製しない。
-
-- conflict_reference: `docs/projects/mnemosyne/memory/current-status.md#active-source-conflicts`
-- formal_issue_root: `docs/review/context-source-conflicts/`
-
-競合中のscopeはActive Decisions / Active Constraintsへ登録しない。
-
-## References
-
-- `docs/projects/mnemosyne/memory/project-summary.md`
-- `docs/projects/mnemosyne/memory/current-status.md`
-- `docs/projects/mnemosyne/memory/next-actions.md`
-- `docs/memory/memory-policy.md`
-- `docs/memory/memory-taxonomy.md`
-- `docs/memory/
-
-...[truncated by M2-5 draft Context Builder]
 ```
 
 ---
@@ -1651,7 +1528,7 @@ No source selected for this section by M2-5 draft builder.
 
 ### 10.1 Objective
 
-context builder implementation review
+M2-6 context preview integration check
 
 ### 10.2 Required Outputs
 
@@ -1667,7 +1544,240 @@ context builder implementation review
 
 ## 11. Additional Sources
 
-No additional sources selected.
+### 11.1 Build Report and Context Preview Rule
+
+| Item | Value |
+| --- | --- |
+| Source ID | src-008-build-report-rule-md |
+| Path | docs/context/build-report-rule.md |
+| Document ID | docs/context/build-report-rule.md |
+| Status | active |
+| Source Type | additional_source |
+| Handling | include |
+| Purpose | Explicitly supplied additional source. |
+| Matched By | additional_source |
+| Explicitly Requested | true |
+| Selection Reason | Explicitly requested by additional_sources or --source. |
+
+#### Relevant Content
+
+```md
+---
+title: "Build Report and Context Preview Rule"
+document_id: "docs/context/build-report-rule.md"
+document_role: "context_build_report_rule"
+status: "active"
+version: "0.1.0"
+created_at: "2026-06-10"
+updated_at: "2026-06-10"
+phase: "Phase 2: Context Forge"
+milestone: "M2-6: Context Preview実装"
+owner: "Project Mnemosyne"
+review_status: "active"
+related_documents:
+  - "docs/context/context-pack-structure.md"
+  - "docs/context/source-status-policy.md"
+  - "docs/context/context-build-rule.md"
+  - "docs/templates/context/context-pack.template.md"
+  - "docs/templates/context/context-preview.template.md"
+  - "docs/templates/context/build-report.template.md"
+  - "src/services/contextPreviewService.ts"
+---
+
+# Build Report and Context Preview Rule
+
+## 1. Status
+
+`active`
+
+本書は、M2-6：Context Preview実装のドラフト成果物である。
+
+---
+
+## 2. Purpose
+
+本書は、Context PackをAIへ投入する前に、人間が確認するための **Context Preview** と、生成過程を追跡する **Build Report** の出力ルールを定義する。
+
+M2-6では、Context Pack本文を直接読まなくても、以下を確認できる状態を目指す。
+
+- どのsourceが含まれ、どのsourceが除外されたか
+- active / accepted / draft / proposed / archived / deprecated / superseded / unknown sourceが混在していないか
+- Context不足、競合候補、token budget超過がないか
+- Agent要求Contextが満たされているか
+- Context Pack本文とBuild Reportの対応を追跡できるか
+
+---
+
+## 3. Scope
+
+### 3.1 In Scope
+
+- Context PackとPreviewの差分定義
+- Build Reportの詳細出力ルール
+- Context Previewの人間確認用出力ルール
+- source list / warnings / token estimate / coverageの表示ルール
+- source status混在状況の表示ルール
+- Agent要求Contextの充足状況の表示ルール
+- Context Pack本文とBuild Reportのtrace rule
+- `dist/context/{project_code}/{agent_code}/context-preview.md` の出力ルール
+
+### 3.2 Out of Scope
+
+- Context Pack本文の章構成変更
+- Agent Registry自体のschema変更
+- Semantic conflict detectionの完全実装
+- tokenizerベースの厳密なtoken count
+- GUI Preview
+- RAG検索結果Preview
+
+---
+
+## 4. Artifact Relationship
+
+M2-6の生成物は以下の関係とする。
+
+| Artifact | Primary Reader | Purpose | Source of Truth |
+|---|---|---|---|
+| Context Pack | AI | AI投入用の本文Context | no |
+| Build Report | human / tool | 生成過程、検証結果、採用・除外理由の詳細 | no |
+| Context Preview | human | AI投入前の確認用サマリー | no |
+
+Context Previewは、Context Packの短縮版ではない。  
+Context Previewは、**AIに渡す内容そのものではなく、AIへ渡す前に人間が確認すべきリスク・充足状況・trace情報をまとめた確認用成果物**である。
+
+---
+
+## 5. Context Pack and Preview Difference
+
+| Item | Context Pack | Context Preview |
+|---|---|---|
+| Main purpose | AIへ渡す作業文脈 | 人間が投入前に確認する |
+| Includes source excerpts | yes | no, 原則summaryのみ |
+| Includes full task context | yes | summary only |
+| Includes warnings | yes | yes, emphasized |
+| Includes source list | yes | yes, compact plus status summary |
+| Includes token estimate | summary only | yes, review-focused |
+| Includes coverage | optional summary | required |
+| Includes agent required context satisfaction | usually implicit | required |
+| Use as AI input | yes | no |
+| Use as source of truth | no | no |
+
+---
+
+## 6. Required Build Report Sections
+
+Build Reportは以下の章を持つ。
+
+` ` `md
+# Context Build Report
+
+## 1. Build Result
+## 2. Request Summary
+## 3. Output Artifacts
+## 4. Required Docs Check
+## 5. Agent Context Coverage
+## 6. Source Coverage
+## 7. Source Status Distribution
+## 8. Warnings
+## 9. Errors
+## 10. Included Sources
+## 11. Excluded Sources
+## 12. Token Estimate
+## 13. Context Pack Trace
+## 14. Unsupported / Placeholder Features
+` ` `
+
+---
+
+## 7. Required Context Preview Sections
+
+Context Previewは以下の章を持つ。
+
+` ` `md
+# Context Preview
+
+## 1. Preview Summary
+## 2. Human Review Checklist
+## 3. Build Result
+## 4. Output Artifacts
+## 5. Warning Summary
+## 6. Source Status Mix
+## 7. Agent Context Coverage
+## 8. Source Coverage
+## 9. Token Estimate
+## 10. Context Pack and Build Report Trace
+## 11. Included Source List
+## 12. Excluded Source List
+## 13. Review Decision
+` ` `
+
+---
+
+## 8. Warning Rules
+
+Context Preview must surface the same warning codes as Context Pack / Build Report.
+
+| Warning Code | Preview Handling |
+|---|---|
+| `missing_required_doc` | P0 risk. Show in Warning Summary and Agent Context Coverage if relevant. |
+| `draft_source_included` | Show in Source Status Mix and Included Source List. |
+| `proposed_source_included` | Show in Source Status Mix and Included Source List. |
+| `archived_source_included` | Show in Source Status Mix and Included Source List. |
+| `deprecated_source_included` | Show in Source Status Mix and Included Source List. |
+| `superseded_source_included` | Show in Source Status Mix and Included Source List. |
+| `unknown_status` | Show as P0/P1 review risk depending on source role. |
+| `conflict_detected` | Show in Warning Summary. Human review required. |
+| `adr_conflict_detected` | Show as P0 risk. Human review required. |
+| `recent_context_conflict` | Show in Warning Summary. Active source takes precedence. |
+| `source_excluded` | Show in Excluded Source List. |
+| `token_budget_exceeded` | Show in Token Estimate and Review Checklist. |
+
+---
+
+## 9. Agent Context Coverage Rule
+
+Agent Context Coverage verifies whether the Context Pack satisfies the agent's requested context.
+
+### 9.1 Coverage Status
+
+| Status | Meaning |
+|---|---|
+| `covered` | At least one included source satisfies the required context item. |
+| `partial` | Source exists but is summarized, warning-only, reference-only, or weakly matched. |
+| `missing` | No included source satisfies the required context item. |
+| `not_applicable` | The required item is not applicable to this build request. |
+| `unknown` | Coverage cannot be determined by the current builder. |
+
+### 9.2 Coverage Matching Inputs
+
+Coverage may be calculated from the following fields.
+
+- Agent Registry `required_context`
+- Agent Registry `optional_context`
+- Context source `includedSection`
+- Context source `matchedBy`
+- Context source `inclusionReason`
+- Context source `sourceType`
+- Task Request
+- Additional Sources
+
+### 9.3 Initial Implementation Rule
+
+M2-6 initial implementation may use deterministic structural matching only.
+
+Semantic coverage scoring is not required in M2-6.
+
+---
+
+## 10. Source Coverage Rule
+
+Source Coverage summarizes the selected and excluded source population.
+
+| Metric | Description |
+|---|
+
+...[truncated by M2-5 draft Context Builder]
+```
 
 ## 12. Constraints and Write Policy
 
@@ -1708,12 +1818,13 @@ No warnings.
 | src-005-ADR-003-human-approved-memory-update-md | docs/adr/ADR-003-human-approved-memory-update.md | docs/adr/ADR-003-human-approved-memory-update.md | ADR-003: Human-Approved Memory Update | active | adr_source | 6. Active Decisions | アーキテクチャ判断や依存方向の根拠を確認する | include | mnemosyne_adrs | false | Matched Project Registry source group: mnemosyne_adrs. |
 | src-006-ADR-004-project-independent-memory-template-md | docs/adr/ADR-004-project-independent-memory-template.md | docs/adr/ADR-004-project-independent-memory-template.md | ADR-004: Project-Independent Memory Template | active | adr_source | 6. Active Decisions | アーキテクチャ判断や依存方向の根拠を確認する | include | mnemosyne_adrs | false | Matched Project Registry source group: mnemosyne_adrs. |
 | src-007-ADR-005-agent-context-separation-md | docs/adr/ADR-005-agent-context-separation.md | docs/adr/ADR-005-agent-context-separation.md | ADR-005: Agent and Project Context Separation | active | adr_source | 6. Active Decisions | アーキテクチャ判断や依存方向の根拠を確認する | include | mnemosyne_adrs | false | Matched Project Registry source group: mnemosyne_adrs. |
+| src-008-build-report-rule-md | docs/context/build-report-rule.md | docs/context/build-report-rule.md | Build Report and Context Preview Rule | active | additional_source | 11. Additional Sources | Explicitly supplied additional source. | include | additional_source | true | Explicitly requested by additional_sources or --source. |
 
 ## 15. Build Report Summary
 
 | Item | Value |
 | --- | --- |
-| Included Source Count | 7 |
+| Included Source Count | 8 |
 | Excluded Source Count | 0 |
 | Warning Count | 0 |
 | Conflict Count | 0 |

@@ -16,13 +16,16 @@ import type {
   ContextBuildValidationIssue,
   ContextTokenEstimate,
 } from "../types/context";
-import type { OutputContractId } from "../types/registry";
+import { createContextPreview } from "./contextPreviewService";
+import type { AgentContextRequirement, OutputContractId } from "../types/registry";
 
 export interface ContextBuildOutput {
   contextPackPath: string;
   buildReportPath: string;
+  contextPreviewPath: string;
   contextPackMarkdown: string;
   buildReportMarkdown: string;
+  contextPreviewMarkdown: string;
   report: ContextBuildReport;
 }
 
@@ -60,8 +63,10 @@ export async function buildContextPack(input: {
     return {
       contextPackPath: "",
       buildReportPath: "",
+      contextPreviewPath: "",
       contextPackMarkdown: "",
       buildReportMarkdown,
+      contextPreviewMarkdown: "",
       report,
     };
   }
@@ -132,6 +137,7 @@ export async function buildContextPack(input: {
   );
   const contextPackPath = path.join(outputDirectory, "context-pack.md");
   const buildReportPath = path.join(outputDirectory, "build-report.md");
+  const contextPreviewPath = path.join(outputDirectory, "context-preview.md");
 
   const contextPackMarkdown = renderContextPackMarkdown({
     request: input.request,
@@ -166,11 +172,29 @@ export async function buildContextPack(input: {
   await fs.promises.writeFile(contextPackPath, contextPackMarkdown, "utf8");
   await fs.promises.writeFile(buildReportPath, buildReportMarkdown, "utf8");
 
+  const contextPreviewOutput = await createContextPreview({
+    projectCode: resolvedProject.project.project_code,
+    projectName: resolvedProject.project.project_name,
+    agentCode: resolvedAgent.agent.agent_code,
+    agentName: resolvedAgent.agent.agent_name,
+    taskRequest: input.request.taskRequest,
+    outputType,
+    buildMode,
+    contextPackPath,
+    buildReportPath,
+    contextPreviewPath,
+    report,
+    agentRequiredContext: toAgentRequiredContextPreviewKeys(resolvedAgent.agent.required_context),
+  });
+  const contextPreviewMarkdown = contextPreviewOutput.contextPreviewMarkdown;
+
   return {
     contextPackPath,
     buildReportPath,
+    contextPreviewPath,
     contextPackMarkdown,
     buildReportMarkdown,
+    contextPreviewMarkdown,
     report,
   };
 }
@@ -352,6 +376,30 @@ function renderContextPackMarkdown(input: {
     "## End of Context Pack",
     "",
   ].join("\n");
+}
+
+function toAgentRequiredContextPreviewKeys(requirements: AgentContextRequirement[]): string[] {
+  const keys = new Set<string>();
+
+  for (const requirement of requirements) {
+    for (const documentName of requirement.document_names ?? []) {
+      keys.add(documentName);
+    }
+
+    for (const directPath of requirement.paths ?? []) {
+      keys.add(directPath);
+    }
+
+    if (requirement.source_group) {
+      keys.add(requirement.source_group);
+    }
+
+    if ((requirement.document_names ?? []).length === 0 && (requirement.paths ?? []).length === 0 && !requirement.source_group) {
+      keys.add(requirement.source_type);
+    }
+  }
+
+  return [...keys];
 }
 
 function validateMinimalRequest(request: ContextBuildRequest): ContextBuildValidationIssue[] {
