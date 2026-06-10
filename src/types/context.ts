@@ -21,10 +21,7 @@ export type ContextBuildOutputType = OutputContractId | "context_pack";
 /** CLI compatibility alias. Normalized before validation / resolution. */
 export type ContextBuildOutputAlias = "review_report";
 
-export type RawContextBuildOutputType =
-  | ContextBuildOutputType
-  | ContextBuildOutputAlias
-  | string;
+export type RawContextBuildOutputType = ContextBuildOutputType | ContextBuildOutputAlias | string;
 
 export type RecentContextSource = "conversation-summary";
 
@@ -49,7 +46,13 @@ export type ContextBuildIssueCode =
   | "invalid_additional_source_path"
   | "additional_source_not_found"
   | "additional_source_not_allowed"
-  | "additional_source_status_warning"
+  | "source_excluded"
+  | "draft_source_included"
+  | "proposed_source_included"
+  | "archived_source_included"
+  | "deprecated_source_included"
+  | "superseded_source_included"
+  | "unknown_status"
   | "conflicting_recent_context_options"
   | "unsupported_recent_context_source"
   | "invalid_recent_context_option"
@@ -103,6 +106,11 @@ export interface ContextAdditionalSourceRequest {
 
   /** Optional purpose supplied by caller. Builder may infer this when omitted. */
   purpose?: string;
+  title?: string;
+  documentId?: string;
+  matchedBy?: string;
+  explicitlyRequested?: boolean;
+  selectionReason?: string;
 }
 
 export interface ContextSessionRequest {
@@ -235,6 +243,11 @@ export interface ContextSourceSelection {
   handling: ContextSourceHandling;
   includedSection?: string;
   purpose?: string;
+  title?: string;
+  documentId?: string;
+  matchedBy?: string;
+  explicitlyRequested?: boolean;
+  selectionReason?: string;
 }
 
 export type ContextSourceInclusionReason =
@@ -268,6 +281,8 @@ export interface ContextBuildReport {
   warnings: ContextBuildValidationIssue[];
   errors: ContextBuildValidationIssue[];
   tokenEstimate?: ContextTokenEstimate;
+  requiredDocsCheck?: import("./registry").RequiredMemoryDocsCheckResult;
+  unsupportedFeatures?: string[];
   generationResult: "success" | "warning" | "failed";
 }
 
@@ -276,6 +291,8 @@ export interface ContextTokenEstimate {
   maxTokens: number;
   exceeded: boolean;
   handling: "none" | "summarized" | "excluded" | "failed";
+  approximate: boolean;
+  note?: string;
 }
 
 export function normalizeContextBuildOutputType(
@@ -295,8 +312,8 @@ export function normalizeContextBuildOutputType(
 function hasSessionContextPayload(input?: RawContextSessionRequest): boolean {
   return Boolean(
     input?.notes?.length ||
-      input?.review_viewpoints?.length ||
-      input?.temporary_constraints?.length,
+    input?.review_viewpoints?.length ||
+    input?.temporary_constraints?.length,
   );
 }
 
@@ -304,9 +321,7 @@ function hasCliSessionContextPayload(args: ContextBuildCliArgs): boolean {
   return Boolean(args.sessionNote?.length || args.reviewViewpoint?.length);
 }
 
-function normalizeRecentContextFromCli(
-  args: ContextBuildCliArgs,
-): RecentContextRequest {
+function normalizeRecentContextFromCli(args: ContextBuildCliArgs): RecentContextRequest {
   if (args.recent !== undefined && args.noRecent) {
     throw new Error(
       "conflicting_recent_context_options: --recent and --no-recent cannot be used together.",
@@ -330,9 +345,7 @@ function normalizeRecentContextFromCli(
   };
 }
 
-function normalizeRecentContextFromRaw(
-  input?: RawRecentContextRequest,
-): RecentContextRequest {
+function normalizeRecentContextFromRaw(input?: RawRecentContextRequest): RecentContextRequest {
   if (!input) {
     return { include: false };
   }
@@ -352,9 +365,7 @@ function normalizeRecentContextFromRaw(
   };
 }
 
-export function toContextBuildRequestFromCli(
-  args: ContextBuildCliArgs,
-): ContextBuildRequest {
+export function toContextBuildRequestFromCli(args: ContextBuildCliArgs): ContextBuildRequest {
   if (args.request) {
     throw new Error(
       "mixed_request_input_not_allowed: request file loading must be handled before CLI argument normalization.",
@@ -384,9 +395,7 @@ export function toContextBuildRequestFromCli(
   };
 }
 
-export function toContextBuildRequestFromRaw(
-  raw: RawContextBuildRequest,
-): ContextBuildRequest {
+export function toContextBuildRequestFromRaw(raw: RawContextBuildRequest): ContextBuildRequest {
   const input = raw.context_build_request;
   const sessionPayloadExists = hasSessionContextPayload(input.session_context);
 

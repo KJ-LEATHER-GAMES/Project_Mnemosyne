@@ -195,8 +195,7 @@ export async function listProjectSourceCandidates(input: {
     required_memory_docs: project.required_memory_docs.map((fileName) => ({
       source_type: "memory_doc",
       path_or_pattern: path.join(project.memory_root, fileName),
-      description:
-        "Existence validation target. Not always included in Context Pack.",
+      description: "Existence validation target. Not always included in Context Pack.",
     })),
     optional_sources: flattenSourceGroups(project.optional_sources ?? [], "optional_source"),
     adr_sources: flattenSourceGroups(project.adr_sources ?? [], "adr_source"),
@@ -214,17 +213,15 @@ export function findProject(
 export function checkRequiredMemoryDocs(
   project: ProjectRegistryEntry,
 ): RequiredMemoryDocsCheckResult {
-  const requiredDocs: RequiredMemoryDocCheck[] = project.required_memory_docs.map(
-    (fileName) => {
-      const resolvedPath = path.resolve(path.join(project.memory_root, fileName));
+  const requiredDocs: RequiredMemoryDocCheck[] = project.required_memory_docs.map((fileName) => {
+    const resolvedPath = path.resolve(path.join(project.memory_root, fileName));
 
-      return {
-        file_name: fileName,
-        resolved_path: resolvedPath,
-        exists: fs.existsSync(resolvedPath),
-      };
-    },
-  );
+    return {
+      file_name: fileName,
+      resolved_path: resolvedPath,
+      exists: fs.existsSync(resolvedPath),
+    };
+  });
 
   const missingDocs = requiredDocs.filter((doc) => !doc.exists);
 
@@ -240,10 +237,7 @@ export function checkRequiredMemoryDocs(
   };
 }
 
-function validateRegistryShapeOrThrow(
-  registry: ProjectRegistryFile,
-  registryPath: string,
-): void {
+function validateRegistryShapeOrThrow(registry: ProjectRegistryFile, registryPath: string): void {
   if (!registry || typeof registry !== "object") {
     throw new Error(`Project Registry is not an object: ${registryPath}`);
   }
@@ -396,10 +390,7 @@ function validateProjectPolicies(
 
   const sourcePolicyId = project.source_status_policy?.policy_id;
 
-  if (
-    sourcePolicyId &&
-    !VALID_SOURCE_STATUS_POLICIES.includes(sourcePolicyId)
-  ) {
+  if (sourcePolicyId && !VALID_SOURCE_STATUS_POLICIES.includes(sourcePolicyId)) {
     errors.push({
       code: "invalid_source_status_policy",
       message: `Invalid source_status_policy: ${sourcePolicyId}`,
@@ -568,9 +559,7 @@ function resolveWritePolicy(
   const resolved = resolveWritePolicyOrNull(registry, project);
 
   if (!resolved) {
-    throw new Error(
-      `write_policy is not defined in defaults: ${project.write_policy.policy_id}`,
-    );
+    throw new Error(`write_policy is not defined in defaults: ${project.write_policy.policy_id}`);
   }
 
   return resolved;
@@ -582,11 +571,7 @@ function resolveWritePolicyOrNull(
 ): WritePolicyConfig | null {
   const inlinePolicy = project.write_policy as Partial<WritePolicyConfig>;
 
-  if (
-    inlinePolicy.ai_can &&
-    inlinePolicy.ai_must_not &&
-    inlinePolicy.human_approval_required_for
-  ) {
+  if (inlinePolicy.ai_can && inlinePolicy.ai_must_not && inlinePolicy.human_approval_required_for) {
     return inlinePolicy as WritePolicyConfig;
   }
 
@@ -625,9 +610,7 @@ function mightMatchExistingPath(pattern: string): boolean {
   }
 
   const staticPrefix = normalizedPattern.split("*")[0];
-  const directoryPrefix = staticPrefix.endsWith("/")
-    ? staticPrefix
-    : path.dirname(staticPrefix);
+  const directoryPrefix = staticPrefix.endsWith("/") ? staticPrefix : path.dirname(staticPrefix);
 
   if (!directoryPrefix || directoryPrefix === ".") {
     return true;

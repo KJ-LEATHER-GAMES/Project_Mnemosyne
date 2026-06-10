@@ -5,160 +5,74 @@ document_role: "project_memory"
 memory_type: "project_summary"
 project_code: "mnemosyne"
 status: "active"
-version: "1.0.0"
+version: "1.1.0"
 created_at: "2026-06-05"
-updated_at: "2026-06-05"
-phase: "Phase 1: Memory Foundation"
-milestone: "M1-4: Mnemosyne初期記憶作成"
+updated_at: "2026-06-10"
+phase: "Phase 2: Context Forge"
+milestone: "M2-5: Context Builder初期実装"
+owner: "Project Mnemosyne"
 related_documents:
-  - "docs/phases/phase-1-memory-foundation.md"
-  - "docs/requirements/overall-requirements.md"
-  - "docs/memory/memory-policy.md"
-  - "docs/memory/memory-taxonomy.md"
-  - "docs/memory/context-source-priority.md"
   - "docs/projects/mnemosyne/memory/current-status.md"
   - "docs/projects/mnemosyne/memory/active-decisions.md"
   - "docs/projects/mnemosyne/memory/next-actions.md"
   - "docs/projects/mnemosyne/memory/ai-entrypoint.md"
+  - "docs/review/m2-5-context-builder-active-review.md"
 ---
 
 # Project Summary
 
-## Project Metadata
+## 1. Project Identity
 
-| Field | Value |
+| Item | Value |
 |---|---|
-| project_code | `mnemosyne` |
-| project_name | Project Mnemosyne |
-| project_status | active |
-| project_type | platform |
-| owner | 個人開発者 |
-| started_at | 2026-05-27 |
-| repository_or_workspace | `project-mnemosyne/` |
-| memory_root | `docs/projects/mnemosyne/memory/` |
+| Project Name | Project Mnemosyne |
+| Project Code | `mnemosyne` |
+| Theme | AI外部記憶基盤を作る |
+| Current Phase | Phase 2: Context Forge |
+| Current Milestone | M2-5: Context Builder初期実装 |
+| Primary User | 個人開発者 |
+| Primary Use Case | AI作業に必要なProject / Agent / Task Contextを再利用可能なMarkdown Context Packとして生成する |
 
-## Purpose
+## 2. Purpose
 
-Project Mnemosyneは、AIとの会話、設計判断、タスク、記事メモ、ドキュメント更新案を外部記憶として整理し、AIが必要な文脈を再利用できるようにするための個人開発向けAI外部記憶基盤である。
+Project Mnemosyneは、AIチャットに依存して散らばりやすい前提・判断・タスク・検証結果を、Markdown正本として管理し、必要な文脈をAIへ安全に渡すための外部記憶基盤である。
 
-本プロジェクトの目的は、AIにすべてを覚えさせることではない。
+Phase 2では、Project Registry、Agent Registry、Context Build Requestをもとに、Context Packを生成する仕組みを整備する。
 
-GitHub docs、ADR、Notion、PostgreSQL、Context Pack、RAG、MCP、Agentなどを段階的に組み合わせ、AIが参照できる正本・副本・生成物の境界を明確にした記憶基盤を構築することを目的とする。
+## 3. Current Architecture Summary
 
-## Relationship with AI Entrypoint
+| Layer | Current Artifact |
+|---|---|
+| Project Registry | `config/projects.yaml` / `src/services/projectRegistryService.ts` |
+| Agent Registry | `config/agents.yaml` / `src/services/agentRegistryService.ts` |
+| Context Build Request | request YAML / CLI args |
+| Context Builder | `src/cli/context-build.ts` / `src/services/contextBuilderService.ts` |
+| Source Resolution | `src/services/sourceResolverService.ts` |
+| Build Report | `src/services/buildReportService.ts` |
+| Generated Output | `dist/context/{project_code}/{agent_code}/context-pack.md` / `build-report.md` |
 
-本書はProject Mnemosyneの目的、背景、Scope、Stable Factsの正本である。
+## 4. Source of Truth Boundary
 
-`docs/projects/mnemosyne/memory/ai-entrypoint.md` はAI支援開始時の入口であり、Project概要を最小要約として再掲する。詳細なProject概要を確認する場合は、本書を正本として扱う。
+Context PackとBuild Reportは生成物であり、正本ではない。
 
-## Background
+正本は以下を優先する。
 
-AIとの開発相談では、会話が長くなるほど以下の課題が発生する。
+1. Active ADR
+2. Active memory / context / phase / requirement documents
+3. Project Registry / Agent Registry
+4. Human-approved project memory documents
+5. Generated Context Pack / Build Report
 
-- 毎回プロジェクトの前提説明が必要になる
-- 過去の設計判断が会話ログに埋もれる
-- 決定事項、未決事項、タスク、アイデアが混在する
-- AIが古い情報や仮説を確定事項として扱う
-- ChatGPT / Cursor / Claude などAIクライアント間で文脈が分断される
-- 会話ログが設計資産として残らない
-- プロジェクト横断で専門Agentを再利用しづらい
+## 5. Current Completion Point
 
-Project Mnemosyneは、これらの課題に対して、会話を流さず、再利用可能な設計資産へ変換するための外部記憶構造を提供する。
+M2-5: Context Builder初期実装は、更新版ドラフトの検証によりActive化可能と判断された。
 
-## Target Users / Stakeholders
+主な確認済み事項は以下。
 
-| Stakeholder | Role / Need | Relationship to Project |
-|---|---|---|
-| 個人開発者 | 複数プロジェクトの設計判断、タスク、文脈を継続的に扱いたい | primary_user |
-| AI Assistant | 正本に基づいて、古い情報や未決定案を混同せず支援する | operator |
-| ChatGPT / Cursor / Claude などのAIクライアント | 共通のProject Contextを参照して作業を継続する | affected_party |
-| ATSなどの適用対象プロジェクト | 記憶構造とContext生成の検証対象となる | validation_target |
+- `npm run check` 成功
+- `--help` / `-h` 成功
+- ATS / Mnemosyne Context Pack生成成功
+- active source metadata解決成功
+- draft source warning code `draft_source_included` 確認済み
+- test fixtureを `docs/review` から `tests/fixtures/context-builder` へ分離済み
 
-## Core Concepts
-
-| Concept | Definition in This Project | Note |
-|---|---|---|
-| External Memory | AIが参照できるように整理されたプロジェクト記憶 | AI内部の記憶ではなく、外部に管理する |
-| Source of Truth | 判断・設計・状態の正本となる情報源 | Markdown docs / ADRを初期正本とする |
-| Project Context | プロジェクト固有の目的、状態、判断、次アクション | Agent共通定義とは分離する |
-| Agent Context | 役割ベースのAI支援に必要な共通ルール | ADR Agent、Docs Agent、Review Agentなど |
-| Context Pack | AIへ渡すために正本から組み立てた文脈 | 生成物であり正本ではない |
-| Conversation Summary | 会話ログを再利用可能な記憶候補へ変換したもの | そのままActive Decisionにはしない |
-| Conflict Issue | 正本間の競合を検知・記録・解消するためのIssue | current-status.mdから参照する |
-
-## Scope
-
-- プロジェクト概要の整理
-- 現在状況の管理
-- 設計判断のADR化
-- タスク、Issue、Ideaの分類
-- 会話ログの要約と記憶化
-- AIに渡すContext Pack生成
-- 将来的なRAG検索
-- 将来的なMemory API / MCP連携
-- 汎用専門Agentの設計
-- 複数プロジェクトへ適用可能な記憶テンプレートの整備
-
-## Out of Scope
-
-Phase 1時点では以下を対象外とする。
-
-- RAG検索の実装
-- Memory APIの実装
-- MCP Serverの実装
-- UIの実装
-- PostgreSQLによる構造化記憶DBの実装
-- Vector Store / pgvectorの実装
-- AIによる正本文書への直接write
-- Agentの本格実装
-- 完全自動の会話要約・Decision抽出・Task登録
-
-## Stable Facts
-
-| Fact ID | Fact | Source Path | As Of | Status | Note |
-|---|---|---|---|---|---|
-| MNEMO-FACT-001 | Project Mnemosyneは、AI外部記憶基盤を作るプロジェクトである。 | `docs/requirements/overall-requirements.md` | 2026-06-05 | active | プロジェクトの根本目的 |
-| MNEMO-FACT-002 | Phase 1の名称はMemory Foundationであり、記憶構造と運用ルールを定義する。 | `docs/phases/phase-1-memory-foundation.md` | 2026-06-05 | active | 現在の作業Phase |
-| MNEMO-FACT-003 | Phase 1の検証対象はMnemosyne自身とATSである。 | `docs/phases/phase-1-memory-foundation.md` | 2026-06-05 | active | M1-4 / M1-5の対象 |
-| MNEMO-FACT-004 | M1-4ではMnemosyne自身の初期記憶として5文書を作成する。 | `docs/phases/phase-1-memory-foundation.md` | 2026-06-05 | active | 本タスクの成果物 |
-| MNEMO-FACT-005 | M1-3でMemory Template 6文書がActive化済みである。 | `docs/review/m1-3-template-activation-record.md` | 2026-06-05 | active | M1-4の入力 |
-
-## Source of Truth
-
-| Information Category | Authoritative Source | Role |
-|---|---|---|
-| プロジェクト目的・安定した範囲・Stable Fact | `docs/projects/mnemosyne/memory/project-summary.md` | Project概要の正本 |
-| 現在地・Issue・Conflict Issue参照 | `docs/projects/mnemosyne/memory/current-status.md` | 状態の正本 |
-| 現在有効なDecision / Constraint | `docs/projects/mnemosyne/memory/active-decisions.md` および関連ADR | 判断・制約の正本 |
-| 直近Task | `docs/projects/mnemosyne/memory/next-actions.md` | Taskの正本 |
-| AI参照入口 | `docs/projects/mnemosyne/memory/ai-entrypoint.md` | 参照ルートの入口 |
-| 共通Memory運用ルール | `docs/memory/memory-policy.md` | 正本・副本・更新権限の正本 |
-| Memory分類・状態定義 | `docs/memory/memory-taxonomy.md` | memory_type / statusの正本 |
-| Context参照優先順位 | `docs/memory/context-source-priority.md` | 競合時の参照優先順位の正本 |
-| 重要設計判断 | `docs/adr/ADR-*.md` | 判断理由と採用背景の正本 |
-
-## Related Projects
-
-| Project Code | Relationship | Shared Context / Boundary | Reference Path |
-|---|---|---|---|
-| ats | validation_target | Memory TemplateとContext設計の実プロジェクト適用検証対象 | `docs/projects/ats/memory/` |
-| note / content projects | future_candidate | 記事メモや発信活動の外部記憶化候補 | none |
-| work-improvement | future_candidate | 業務改善ナレッジの外部記憶化候補 | none |
-
-## References
-
-- `docs/phases/phase-1-memory-foundation.md`
-- `docs/requirements/overall-requirements.md`
-- `docs/memory/memory-policy.md`
-- `docs/memory/memory-taxonomy.md`
-- `docs/memory/context-source-priority.md`
-- `docs/adr/ADR-001-docs-as-source-of-memory.md`
-- `docs/adr/ADR-002-memory-source-of-truth-boundary.md`
-- `docs/adr/ADR-003-human-approved-memory-update.md`
-
-## Change History
-
-| Version | Date | Status | Change Summary | Approved By |
-|---|---|---|---|---|
-| 0.1.0 | 2026-06-05 | draft | M1-4 Mnemosyne初期記憶作成として初版ドラフトを作成。 | pending |
-| 1.0.0 | 2026-06-05 | active | M1-4 Active化レビューのP1-004を反映し、ai-entrypointとの概要重複の意図を明記してActive化。 | user |

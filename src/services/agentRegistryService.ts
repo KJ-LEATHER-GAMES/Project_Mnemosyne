@@ -44,15 +44,9 @@ const VALID_OUTPUT_CONTRACTS: OutputContractId[] = [
 
 const VALID_WRITE_POLICIES: WritePolicyId[] = ["draft_only"];
 
-const DEFAULT_REQUIRED_P0_AGENTS: AgentCode[] = [
-  "adr_writer",
-  "requirements_writer",
-];
+const DEFAULT_REQUIRED_P0_AGENTS: AgentCode[] = ["adr_writer", "requirements_writer"];
 
-const DEFAULT_REQUIRED_P1_AGENTS: AgentCode[] = [
-  "implementation_reviewer",
-  "task_planner",
-];
+const DEFAULT_REQUIRED_P1_AGENTS: AgentCode[] = ["implementation_reviewer", "task_planner"];
 
 export async function loadAgentRegistry(
   registryPath = DEFAULT_AGENTS_YAML_PATH,
@@ -218,10 +212,7 @@ export function findAgent(
   return registry.agents.find((agent) => agent.agent_code === agentCode);
 }
 
-export function supportsProject(
-  agent: AgentRegistryEntry,
-  projectCode: ProjectCode,
-): boolean {
+export function supportsProject(agent: AgentRegistryEntry, projectCode: ProjectCode): boolean {
   return (
     agent.supported_project_codes.includes("*") ||
     agent.supported_project_codes.includes(projectCode)
@@ -238,12 +229,8 @@ export function checkAgentCompletionRequirements(
 
   const existingAgents = new Set(registry.agents.map((agent) => agent.agent_code));
 
-  const missingP0Agents = requiredP0Agents.filter(
-    (agentCode) => !existingAgents.has(agentCode),
-  );
-  const missingP1Agents = requiredP1Agents.filter(
-    (agentCode) => !existingAgents.has(agentCode),
-  );
+  const missingP0Agents = requiredP0Agents.filter((agentCode) => !existingAgents.has(agentCode));
+  const missingP1Agents = requiredP1Agents.filter((agentCode) => !existingAgents.has(agentCode));
 
   return {
     required_p0_agents: requiredP0Agents,
@@ -268,9 +255,7 @@ function validateAgentRegistryShapeOrThrow(
   }
 }
 
-function validateDuplicateAgentCodes(
-  registry: AgentRegistryFile,
-): AgentRegistryValidationError[] {
+function validateDuplicateAgentCodes(registry: AgentRegistryFile): AgentRegistryValidationError[] {
   const errors: AgentRegistryValidationError[] = [];
   const seen = new Set<string>();
 
@@ -338,9 +323,7 @@ function validateCompletionRequirements(
   return errors;
 }
 
-function validateAgentRequiredFields(
-  agent: AgentRegistryEntry,
-): AgentRegistryValidationError[] {
+function validateAgentRequiredFields(agent: AgentRegistryEntry): AgentRegistryValidationError[] {
   const errors: AgentRegistryValidationError[] = [];
 
   if (!agent.agent_code) {
@@ -457,9 +440,7 @@ function validateAgentRequiredFields(
   return errors;
 }
 
-function validateAgentPriorityAndScope(
-  agent: AgentRegistryEntry,
-): AgentRegistryValidationError[] {
+function validateAgentPriorityAndScope(agent: AgentRegistryEntry): AgentRegistryValidationError[] {
   const errors: AgentRegistryValidationError[] = [];
 
   if (agent.priority && !VALID_AGENT_PRIORITIES.includes(agent.priority)) {
@@ -566,14 +547,9 @@ function validateAgentPolicies(
 function validateAgentContextRequirements(
   agent: AgentRegistryEntry,
 ): AgentRegistryValidationError[] {
-  const requirements = [
-    ...(agent.required_context ?? []),
-    ...(agent.optional_context ?? []),
-  ];
+  const requirements = [...(agent.required_context ?? []), ...(agent.optional_context ?? [])];
 
-  return requirements.flatMap((requirement) =>
-    validateContextRequirement(agent, requirement),
-  );
+  return requirements.flatMap((requirement) => validateContextRequirement(agent, requirement));
 }
 
 function validateContextRequirement(
@@ -644,9 +620,7 @@ function validateContextRequirement(
   return errors;
 }
 
-function validateAgentWarnings(
-  agent: AgentRegistryEntry,
-): AgentRegistryValidationWarning[] {
+function validateAgentWarnings(agent: AgentRegistryEntry): AgentRegistryValidationWarning[] {
   const warnings: AgentRegistryValidationWarning[] = [];
 
   if (agent.status && agent.status !== "active") {
@@ -730,7 +704,7 @@ function resolveAgentOutputContract(
   }
 
   const additionalRequirements = isOutputOverride(agent.output_contract)
-    ? agent.output_contract.additional_requirements ?? []
+    ? (agent.output_contract.additional_requirements ?? [])
     : [];
 
   return {
@@ -765,11 +739,7 @@ function resolveWritePolicyOrNull(
 ): WritePolicyConfig | null {
   const inlinePolicy = agent.write_policy as Partial<WritePolicyConfig>;
 
-  if (
-    inlinePolicy.ai_can &&
-    inlinePolicy.ai_must_not &&
-    inlinePolicy.human_approval_required_for
-  ) {
+  if (inlinePolicy.ai_can && inlinePolicy.ai_must_not && inlinePolicy.human_approval_required_for) {
     return inlinePolicy as WritePolicyConfig;
   }
 
