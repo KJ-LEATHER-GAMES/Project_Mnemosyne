@@ -1,27 +1,24 @@
 ---
-
 title: "Phase 2: Context Forge 作業計画書"
-document_id: "docs/phases/phase-2-context-forge.md"
-document_role: "phase_plan"
-status: "active"
-version: "1.0.0"
-created_at: "2026-06-08"
-updated_at: "2026-06-08"
+document_id: docs/phases/phase-2-context-forge.md
+document_role: phase_plan
+status: active
+version: 1.0.0
+created_at: 2026-06-08
+updated_at: 2026-06-08
 phase: "Phase 2: Context Forge"
 previous_phase: "Phase 1: Memory Foundation"
 next_phase: "Phase 3: Recall Engine"
-m2_status: "M2-0 active"
-review_status: "active"
+m2_status: M2-0 active
+review_status: active
 related_documents:
-
-- "docs/phases/phase-1-memory-foundation.md"
-- "docs/phases/phase-2-input-requirements.md"
-- "docs/adr/ADR-001-docs-as-source-of-memory.md"
-- "docs/adr/ADR-002-memory-source-of-truth-boundary.md"
-- "docs/adr/ADR-003-human-approved-memory-update.md"
-- "docs/adr/ADR-004-project-independent-memory-template.md"
-- "docs/adr/ADR-005-agent-context-separation.md"
-
+  - docs/phases/phase-1-memory-foundation.md
+  - docs/phases/phase-2-input-requirements.md
+  - docs/adr/ADR-001-docs-as-source-of-memory.md
+  - docs/adr/ADR-002-memory-source-of-truth-boundary.md
+  - docs/adr/ADR-003-human-approved-memory-update.md
+  - docs/adr/ADR-004-project-independent-memory-template.md
+  - docs/adr/ADR-005-agent-context-separation.md
 ---
 
 # Phase 2: Context Forge 作業計画書
@@ -1079,3 +1076,17 @@ M2-0：Phase 2方針確定は、以下の理由によりActive化する。
 | ------- | ---------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
 | 0.1.0   | 2026-06-08 | draft  | Phase 2 Input Requirementsを参照し、Phase 2作業計画書ドラフトを作成。                                                                                                                           | AI draft |
 | 1.0.0   | 2026-06-08 | active | M2-0 Active化レビューのP1修正を反映。Phase3入力要件のDoD明示、成果物名・CLI配置名の統一、`required_memory_docs` の存在検証対象化、Session Context / Recent Context / Conversation Summaryの関係明示、M2-0 Active化チェックリストを追加。 | AI draft |
+
+[[docs/phases/phase-1-memory-foundation.md]]
+
+[[docs/phases/phase-2-input-requirements.md]]
+
+[[docs/adr/ADR-001-docs-as-source-of-memory.md]]
+
+docs/adr/ADR-002-memory-source-of-truth-boundary.md
+
+docs/adr/ADR-003-human-approved-memory-update.md
+
+docs/adr/ADR-004-project-independent-memory-template.md
+
+docs/adr/ADR-005-agent-context-separation.md

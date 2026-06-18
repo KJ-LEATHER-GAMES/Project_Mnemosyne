@@ -5,6 +5,9 @@
   "type": "commonjs",
   "scripts": {
     "context:build": "ts-node src/cli/context-build.ts",
+    "registry:validate:project": "ts-node src/cli/project-registry-validate.ts",
+    "registry:validate:agent": "ts-node src/cli/agent-registry-validate.ts",
+    "registry:validate": "npm run registry:validate:project && npm run registry:validate:agent",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src/**/*.ts",
     "format": "prettier --write \"src/**/*.ts\" \"config/**/*.yaml\" \"*.md\"",
